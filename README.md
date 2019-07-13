@@ -26,13 +26,13 @@ Some technical details:
 
 **Colombo, Sri Lanka**
 
-![](./Examples/Colombo.png){#fig:colombo width=400px}
+![](./Examples/Colombo.png)
 
 
 **Matara, Sri Lanka**
 
-![](./Examples/Matara.png){#fig:Matara width=400px}
+![](./Examples/Matara.png)
 
 **Jaffna, Sri Lanka**
 
-![](./Examples/Jaffna.png){#fig:Jaffna width=405px}
+![](./Examples/Jaffna.png)
