@@ -20,3 +20,19 @@ Some technical details:
 - The pipeline uses a pre-trained model to predict the land cover. Currently, the model is trained over Colombo, but various tests has shown it has a good perfomance on other places as well. A more sophesticated model can be trained by using more datasets.
 
 - Note that while OSM data are automatically fetched from the website for the desired region, the Microsoft data are needed to be downloaded for the chosen location. This can be improved in the future.
+
+
+## Some examples
+
+**Colombo, Sri Lanka**
+
+![](./Examples/Colombo.png){#fig:colombo width=400px}
+
+
+**Matara, Sri Lanka**
+
+![](./Examples/Matara.png){#fig:Matara width=400px}
+
+**Jaffna, Sri Lanka**
+
+![](./Examples/Jaffna.png){#fig:Jaffna width=405px}
