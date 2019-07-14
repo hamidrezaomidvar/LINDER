@@ -1,0 +1,66 @@
+{
+"Pittsburgh": {
+    "downloading_img" : "no",
+    "s_date" : "2017-01-01",
+    "e_date" : "2019-06-01",
+    "coord_top" : [
+            40.480010,
+            -80.039996
+        ],
+    "coord_bot" : [
+            40.426980,
+            -79.973610
+        ],
+    "GUF_data": "no",
+    "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
+    "building_data": "MICROSOFT",
+    "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson"
+    },
+
+    "Colombo": {
+        "downloading_img" : "no",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                6.981137, 79.861419
+            ],
+        "coord_bot" : [
+                6.940209, 79.909089
+            ],
+        "GUF_data": "yes",
+        "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
+        "building_data": "OSM",
+        "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson"
+        },
+    "Jaffna": {
+        "downloading_img" : "yes",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                9.696584, 80.002679
+            ],
+        "coord_bot" : [
+                9.642673, 80.042429
+            ],
+        "GUF_data": "yes",
+        "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
+        "building_data": "OSM",
+        "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson"
+        },
+    "Matara": {
+        "downloading_img" : "yes",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                5.967731, 80.533445
+            ],
+        "coord_bot" : [
+                5.934423, 80.571918
+            ],
+        "GUF_data": "yes",
+        "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
+        "building_data": "OSM",
+        "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson"
+        }
+
+}
