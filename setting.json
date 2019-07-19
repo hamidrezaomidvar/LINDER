@@ -12,25 +12,25 @@
             -79.973610
         ],
     "GUF_data": "no",
-    "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
+    "GUF_data_dir": "",
     "building_data": "MICROSOFT",
     "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson"
     },
 
     "Colombo": {
-        "downloading_img" : "no",
-        "s_date" : "2017-01-01",
-        "e_date" : "2019-06-01",
+        "downloading_img" : "yes",
+        "s_date" : "2018-01-01",
+        "e_date" : "2019-01-01",
         "coord_top" : [
-                6.981137, 79.861419
+                6.984848, 79.816504
             ],
         "coord_bot" : [
-                6.940209, 79.909089
+                6.861644, 79.936412
             ],
         "GUF_data": "yes",
         "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
         "building_data": "OSM",
-        "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson"
+        "building_dir": ""
         },
     "Jaffna": {
         "downloading_img" : "yes",
@@ -45,7 +45,7 @@
         "GUF_data": "yes",
         "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
         "building_data": "OSM",
-        "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson"
+        "building_dir": ""
         },
     "Matara": {
         "downloading_img" : "yes",
@@ -60,7 +60,157 @@
         "GUF_data": "yes",
         "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
         "building_data": "OSM",
-        "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson"
+        "building_dir": ""
+        },
+    "Seattle": {
+        "downloading_img" : "no",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                47.702247, -122.431344
+            ],
+        "coord_bot" : [
+                47.637956, -122.326858
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "OSM",
+        "building_dir": "Data/Buildings_US_Microsoft/Washington.geojson"
+        },
+    "Boston": {
+        "downloading_img" : "no",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                42.416457, -71.121458
+            ],
+        "coord_bot" : [
+                42.343020, -71.004109
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "MICROSOFT",
+        "building_dir": "Data/Buildings_US_Microsoft/Massachusetts.geojson"
+        },
+    "Trincomalee": {
+        "downloading_img" : "yes",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                8.611384, 81.197253
+            ],
+        "coord_bot" : [
+                8.543646, 81.254073
+            ],
+        "GUF_data": "yes",
+        "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
+        "building_data": "OSM",
+        "building_dir": ""
+        },
+    "Chongqing": {
+        "downloading_img" : "yes",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                29.630913, 106.548783
+            ],
+        "coord_bot" : [
+                29.581031, 106.598404
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "OSM",
+        "building_dir": ""
+        },
+    "Shanghai": {
+        "downloading_img" : "no",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                31.258452, 121.471046
+            ],
+        "coord_bot" : [
+                31.227525, 121.519363
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "OSM",
+        "building_dir": ""
+        },
+    "NewYork": {
+        "downloading_img" : "no",
+        "s_date" : "2017-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                40.775563, -74.007167
+            ],
+        "coord_bot" : [
+                40.736592, -73.954268
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "OSM",
+        "building_dir": ""
+        },
+    "Beijing": {
+        "downloading_img" : "no",
+        "s_date" : "2017-01-01",
+        "e_date" : "2018-01-01",
+        "coord_top" : [
+                39.946967, 116.369563
+            ],
+        "coord_bot" : [
+                39.931116, 116.395658
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "OSM",
+        "building_dir": ""
+        },
+    "Chicago": {
+        "downloading_img" : "yes",
+        "s_date" : "2018-01-01",
+        "e_date" : "2019-01-01",
+        "coord_top" : [
+                41.921804, -87.657994
+            ],
+        "coord_bot" : [
+                41.904788, -87.613793
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "OSM",
+        "building_dir": ""
+        },
+    "Texas": {
+        "downloading_img" : "yes",
+        "s_date" : "2018-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                30.295819, -97.791671
+            ],
+        "coord_bot" : [
+                30.253341, -97.713873
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "MICROSOFT",
+        "building_dir": "Data/Buildings_US_Microsoft/Texas.geojson"
+        },
+    "Auckland": {
+        "downloading_img" : "yes",
+        "s_date" : "2018-01-01",
+        "e_date" : "2019-06-01",
+        "coord_top" : [
+                -36.834621, 174.709370
+            ],
+        "coord_bot" : [
+                -36.899264, 174.807609
+            ],
+        "GUF_data": "no",
+        "GUF_data_dir": "",
+        "building_data": "OSM",
+        "building_dir": ""
         }
 
 }
