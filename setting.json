@@ -32,6 +32,21 @@
         "building_data": "OSM",
         "building_dir": ""
         },
+    "Colombo1": {
+        "downloading_img" : "no",
+        "s_date" : "2018-01-01",
+        "e_date" : "2019-01-01",
+        "coord_top" : [
+                6.958154, 79.898173
+            ],
+        "coord_bot" : [
+                6.935455, 79.936983
+            ],
+        "GUF_data": "yes",
+        "GUF_data_dir": "Data/urban_foot_print/SriLanka04.tif",
+        "building_data": "OSM",
+        "building_dir": ""
+        },
     "Jaffna": {
         "downloading_img" : "yes",
         "s_date" : "2017-01-01",
@@ -67,14 +82,14 @@
         "s_date" : "2017-01-01",
         "e_date" : "2019-06-01",
         "coord_top" : [
-                47.702247, -122.431344
+                47.630985, -122.217635
             ],
         "coord_bot" : [
-                47.637956, -122.326858
+                47.610169, -122.187124
             ],
         "GUF_data": "no",
         "GUF_data_dir": "",
-        "building_data": "OSM",
+        "building_data": "MICROSOFT",
         "building_dir": "Data/Buildings_US_Microsoft/Washington.geojson"
         },
     "Boston": {
@@ -123,14 +138,14 @@
         "building_dir": ""
         },
     "Shanghai": {
-        "downloading_img" : "no",
-        "s_date" : "2017-01-01",
-        "e_date" : "2019-06-01",
+        "downloading_img" : "yes",
+        "s_date" : "2018-01-01",
+        "e_date" : "2019-01-01",
         "coord_top" : [
-                31.258452, 121.471046
+                31.366778, 121.316144
             ],
         "coord_bot" : [
-                31.227525, 121.519363
+                31.171875, 121.629370
             ],
         "GUF_data": "no",
         "GUF_data_dir": "",
@@ -153,7 +168,7 @@
         "building_dir": ""
         },
     "Beijing": {
-        "downloading_img" : "no",
+        "downloading_img" : "yes",
         "s_date" : "2017-01-01",
         "e_date" : "2018-01-01",
         "coord_top" : [

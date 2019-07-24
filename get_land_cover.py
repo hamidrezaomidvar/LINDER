@@ -51,7 +51,7 @@ import grass.script.setup as gsetup
 with open('./setting.json') as setting_file:
     settings = json.load(setting_file)
 
-cname = 'Colombo'
+cname = 'Colombo1'
 
 downloading_img=settings[cname]['downloading_img']=='yes'
 s_date = settings[cname]['s_date']
@@ -759,6 +759,9 @@ def other_tasks(path_out,patch_n):
         predict_GUF_bld_temp['LC']=predict_GUF_bld['LC']
         predict_GUF_bld_temp=predict_GUF_bld_temp.rename(columns={0:'geometry'})
         predict_GUF_bld_temp.crs={'init' :'epsg:4326'}
+        print('dissolving the final result . . . .')
+        predict_GUF_bld_temp=predict_GUF_bld_temp.dissolve('LC')
+        predict_GUF_bld_temp=predict_GUF_bld_temp.reset_index()
         predict_GUF_bld_temp.to_file(path_out+'/predict_GUF_'+Building_data+'_mod'+str(patch_n))
         
     else:
@@ -779,12 +782,15 @@ def other_tasks(path_out,patch_n):
         predict_bld_temp['LC']=predict_bld['LC']
         predict_bld_temp=predict_bld_temp.rename(columns={0:'geometry'})
         predict_bld_temp.crs={'init' :'epsg:4326'}
+        print('dissolving the final result . . . .')
+        predict_bld_temp=predict_bld_temp.dissolve('LC')
+        predict_bld_temp=predict_bld_temp.reset_index()
         predict_bld_temp.to_file(path_out+'/predict_'+Building_data+'_mod'+str(patch_n))
 
 
 path_out = cname
-nx=3
-ny=3
+nx=1
+ny=1
 all_lats=np.linspace(lat_right_bot_t,lat_left_top_t,num=ny+1)
 all_lons=np.linspace(lon_left_top_t,lon_right_bot_t,num=nx+1)
 patch_n=0
@@ -810,16 +816,4 @@ for i in range(0,len(all_lons)-1):
             predict_image(path_out,patch_n)
             other_tasks(path_out,patch_n)
         patch_n=patch_n+1
-
-# #%%
-# import numpy as np
-# [lat_left_top, lon_left_top]=42.416457, -71.121458
-# [lat_right_bot, lon_right_bot]=42.343020, -71.004109
-# all_lats=np.linspace(lat_right_bot,lat_left_top,num=2)
-# all_lons=np.linspace(lon_left_top,lon_right_bot,num=2)
-
-# for i in range(0,len(all_lons)-1):
-#     for j in range(0,len(all_lats)-1):
-#         lon_left_top,lon_right_bot=[all_lons[i],all_lons[i+1]]
-#         lat_right_bot,lat_left_top=[all_lats[i],all_lats[i+1]]
 #%%
