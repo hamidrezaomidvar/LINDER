@@ -1,0 +1,19 @@
+{
+    "motorway": 2.5,
+    "cycleway":0.4,
+    "footway":0.4,
+    "living_street": 1.5,
+    "pedestrian": 1.5,
+    "primary": 3.7,
+    "primary_link": 3.7,
+    "residential": 2,
+    "road": 4,
+    "secondary": 3.5,
+    "secondary_link": 3.5,
+    "service":0.9,
+    "tertiary": 3.5,
+    "tertiary_link": 3.5,
+    "trunk": 2.5,
+    "trunk_link": 2.5,
+    "unclassified": 2
+}

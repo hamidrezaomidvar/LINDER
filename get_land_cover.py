@@ -1,5 +1,6 @@
 import json
 from tqdm import tqdm
+from glob import glob
 import pickle
 import sys
 import os
@@ -35,6 +36,7 @@ import fiona
 import rasterio.mask
 from rasterio.features import shapes
 from pathlib import Path
+import osmnx as ox
 
 
 gisdb = os.path.join(os.path.expanduser("~"), "Documents")
@@ -48,11 +50,13 @@ os.environ['LD_LIBRARY_PATH']="/Applications/GRASS-7.6.app/Contents/Resources/li
 import grass.script as gscript
 import grass.script.setup as gsetup
 
+
 with open('./setting.json') as setting_file:
     settings = json.load(setting_file)
 
-cname = 'Colombo1'
-
+cname = 'London'
+nx=1
+ny=1
 downloading_img=settings[cname]['downloading_img']=='yes'
 s_date = settings[cname]['s_date']
 e_date = settings[cname]['e_date']
@@ -65,13 +69,14 @@ size = 10
 scale = abs(lat_left_top_t-lat_right_bot_t)/abs(lon_left_top_t-lon_right_bot_t)
 
 GUF_data = settings[cname]['GUF_data'] == 'yes'
-if GUF_data:
-    GUF_data_dir = settings[cname]['GUF_data_dir']
 
 Building_data = settings[cname]['building_data']
+Road_data = settings[cname]['road_data']
 if Building_data == 'MICROSOFT':
     building_dir = settings[cname]['building_dir']
 
+
+list_of_GUF=sorted(glob('./Data/GUF/WSF2015_v1_EPSG4326/WSF2015_v1_EPSG4326/*'))
 
 class SentinelHubValidData:
     """
@@ -560,17 +565,26 @@ def other_tasks(path_out,patch_n):
         with fiona.open(path_out+"/shape_box"+str(patch_n)+"/shape_box"+str(patch_n)+".shp", "r") as shapefile:
             features = [feature["geometry"] for feature in shapefile]
 
-        with rasterio.open(GUF_data_dir) as src:
-            out_image, out_transform = rasterio.mask.mask(src, features,
+        for GUF_data_dir in list_of_GUF:
+            try:
+                with rasterio.open(GUF_data_dir) as src:
+                        out_image, out_transform = rasterio.mask.mask(src, features,
                                                                 crop=True)
-            out_meta = src.meta.copy()
+                        out_meta = src.meta.copy()
+
+                print('Overlap is found. Clipping the data..')
+
+                out_meta.update({"driver": "GTiff",
+                "height": out_image.shape[1],
+                "width": out_image.shape[2],
+                "transform": out_transform})
+
+                with rasterio.open(path_out+"/masked_footprint"+str(patch_n)+".tif", "w", **out_meta) as dest:
+                            dest.write(out_image)
+                
             
-        out_meta.update({"driver": "GTiff",
-                        "height": out_image.shape[1],
-                        "width": out_image.shape[2],
-                        "transform": out_transform})
-        with rasterio.open(path_out+"/masked_footprint"+str(patch_n)+".tif", "w", **out_meta) as dest:
-            dest.write(out_image)
+            except:
+                pass
 
         mask = None
         with rasterio.Env():
@@ -630,7 +644,7 @@ def other_tasks(path_out,patch_n):
         predict_GUF=gpd.read_file(path_out+'/predict_GUF'+str(patch_n)+'/predict_GUF'+str(patch_n)+'.shp')
         predict_GUF=predict_GUF[~np.isnan(predict_GUF.a_predicte)]
         predict_GUF['LC']=predict_GUF.a_predicte
-        a=predict_GUF[predict_GUF.b_GUF==255]
+        a=predict_GUF[(predict_GUF.b_GUF==255) & (predict_GUF.a_predicte!=1)& (predict_GUF.a_predicte!=2)]
         predict_GUF.loc[a.index,'LC']=0
         b=predict_GUF[(~np.isnan(predict_GUF.b_GUF))&(predict_GUF.b_GUF!=255) & (predict_GUF.a_predicte==0)]
         predict_GUF.loc[b.index,'LC']=3
@@ -669,128 +683,250 @@ def other_tasks(path_out,patch_n):
     xtile_max=int(np.ceil(xtile_max))
     xtile_min=xtile_min-3
 
-    if Building_data =='OSM':
-        print('Downloading the OSM data . . . ')
-        to_wait=60
-        path_OSM=path_out+'/OSM'+str(patch_n)
-        if not os.path.isdir(path_OSM):
-            os.makedirs(path_OSM)
+    if Building_data != 'no':
+        if Building_data =='OSM':
+            print('Downloading the OSM data . . . ')
+            to_wait=60
+            path_OSM=path_out+'/OSM'+str(patch_n)
+            if not os.path.isdir(path_OSM):
+                os.makedirs(path_OSM)
 
-        for i in np.arange(xtile_min,xtile_max+1):
-            print('Xtile '+str(i-xtile_min+1)+' out of '+str(xtile_max-xtile_min+1))
-            for j in np.arange(ytile_min,ytile_max+1):
+            for i in np.arange(xtile_min,xtile_max+1):
+                print('Xtile '+str(i-xtile_min+1)+' out of '+str(xtile_max-xtile_min+1))
+                for j in np.arange(ytile_min,ytile_max+1):
 
-                if not Path(path_OSM+'/buildings'+str(i)+'-'+str(j)+'.geojson').exists():
-                    url = 'https://a.data.osmbuildings.org/0.2/anonymous/tile/{}/{}/{}.json'.format(zoom,i,j)
-                    try:
+                    if not Path(path_OSM+'/buildings'+str(i)+'-'+str(j)+'.geojson').exists():
+                        url = 'https://a.data.osmbuildings.org/0.2/anonymous/tile/{}/{}/{}.json'.format(zoom,i,j)
+                        try:
 
-                        r = requests.get(url,timeout=10)
-                        while r.status_code==429:
-                            print('Too many requests. Waiting for '+str(to_wait)+' seconds...')
-                            time.sleep(to_wait)
-                            print('Trying again')
                             r = requests.get(url,timeout=10)
+                            while r.status_code==429:
+                                print('Too many requests. Waiting for '+str(to_wait)+' seconds...')
+                                time.sleep(to_wait)
+                                print('Trying again')
+                                r = requests.get(url,timeout=10)
 
-                        with open(path_OSM+'/buildings'+str(i)+'-'+str(j)+'.geojson', 'wb') as f:  
-                            f.write(r.content)
+                            with open(path_OSM+'/buildings'+str(i)+'-'+str(j)+'.geojson', 'wb') as f:  
+                                f.write(r.content)
+                        except:
+                            print('Passing this domain')
+
+            print('All data are collected. DONE')
+
+            print('Attaching the OSM data together . . .')
+            counter=0
+            for i in range(xtile_min,xtile_max+1):
+                for j in range(ytile_min,ytile_max+1):
+
+                    try:
+                        b=gpd.read_file(path_OSM+'/buildings'+str(i)+'-'+str(j)+'.geojson')
+                        b=b.buffer(0)
+
+                        if counter==0:
+                            a=b
+
+                        if counter!=0:
+                            a=a.union(b)
+                        counter=1
                     except:
-                        print('Passing this domain')
+                        pass
 
-        print('All data are collected. DONE')
+            path_OSM_sh=path_OSM+'_sh'
+            if not os.path.isdir(path_OSM_sh):
+                os.makedirs(path_OSM_sh)
 
-        print('Attaching the OSM data together . . .')
-        counter=0
-        for i in range(xtile_min,xtile_max+1):
-            for j in range(ytile_min,ytile_max+1):
-
-                try:
-                    b=gpd.read_file(path_OSM+'/buildings'+str(i)+'-'+str(j)+'.geojson')
-                    b=b.buffer(0)
-
-                    if counter==0:
-                        a=b
-
-                    if counter!=0:
-                        a=a.union(b)
-                    counter=1
-                except:
-                    pass
-
-
-        path_OSM_sh=path_OSM+'_sh'
-        if not os.path.isdir(path_OSM_sh):
-            os.makedirs(path_OSM_sh)
-
-        a.to_file(path_OSM_sh)
+            a.to_file(path_OSM_sh)
 
 
     box_domain=gpd.read_file(path_out+'/shape_box'+str(patch_n)+'/shape_box'+str(patch_n)+'.shp')
 
-    if Building_data =='OSM':
-        buildings=gpd.read_file(path_out+'/OSM'+str(patch_n)+'_sh/OSM'+str(patch_n)+'_sh.shp')
-    elif Building_data=='MICROSOFT':
-        print('Reading the Microsoft building data . . .')
-        buildings=gpd.read_file(building_dir)
-    print('Clipping the building data to the selected domain')        
-    buildings_clipped=clip_shp(buildings,box_domain)
-    buildings_clipped=buildings_clipped.buffer(0)
-    buildings_clipped=gpd.GeoDataFrame(buildings_clipped)
-    buildings_clipped['build']=1
-    buildings_clipped=buildings_clipped.rename(columns={0:'geometry'})
-    buildings_clipped.crs={'init' :'epsg:4326'}
-    print('Writing clipped data into '+path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/')
-    buildings_clipped.to_file(path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/')
+    if Building_data != 'no':
+        if Building_data =='OSM':
+            buildings=gpd.read_file(path_out+'/OSM'+str(patch_n)+'_sh/OSM'+str(patch_n)+'_sh.shp')
+        elif Building_data=='MICROSOFT':
+            print('Reading the Microsoft building data . . .')
+            buildings=gpd.read_file(building_dir)
+        print('Clipping the building data to the selected domain')        
+        buildings_clipped=clip_shp(buildings,box_domain)
+        buildings_clipped=buildings_clipped.buffer(0)
+        buildings_clipped=gpd.GeoDataFrame(buildings_clipped)
+        buildings_clipped['build']=1
+        buildings_clipped=buildings_clipped.rename(columns={0:'geometry'})
+        buildings_clipped.crs={'init' :'epsg:4326'}
+        print('Writing clipped data into '+path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/')
+        buildings_clipped.to_file(path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/')
+
+    if Road_data != 'no':
+        print('Downloading road data from OSM . . .')
+        G = ox.graph_from_bbox(lat_left_top, lat_right_bot, 
+                                lon_right_bot, lon_left_top, 
+                                network_type='all_private')
+        G_projected = ox.project_graph(G)
+        gdf=ox.save_load.graph_to_gdfs(G_projected)[1]
+        road_kind=[]
+        for rd in gdf.highway:
+            if rd[0]=='[':
+                rd=ast.literal_eval(rd)
+            if type(rd)!=list:
+                rd=[rd]
+            road_kind.append(rd[0])
+                
+        gdf['cat']=road_kind 
+
+        with open('./road_width.json') as setting_file:
+            subset = json.load(setting_file)
+
+        buffered=gpd.GeoDataFrame(columns=['geometry','cat'])
+        for kind in subset.keys():
+            temp0=gdf[gdf.cat==kind]
+            temp=temp0.buffer(subset[kind])
+            temp=gpd.GeoDataFrame(temp,columns=['geometry'])
+            temp['cat']=temp0.cat
+            buffered=buffered.append(temp)
+
+        buffered.crs=gdf.crs
+        buffered.to_file(path_out+'/roads_all_'+str(patch_n))
+
+        buffered.cat='5'
+        print('Dissolving roads . . .')
+        buffered=buffered.dissolve(by='cat')
+        buffered=buffered.to_crs(epsg=4326)
+        buffered.to_file(path_out+'/roads_'+str(patch_n))
 
     if GUF_data:
-        print('Merging the predicted-GUF to Building data . . .')
-        time.sleep(3)
-        v1_dir=path_out+'/predict_GUF_mod'+str(patch_n)+'/predict_GUF_mod'+str(patch_n)+'.shp'
-        v2_dir=path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/'+Building_data+'_sh_clipped'+str(patch_n)+'.shp'
-        out_dir=path_out+'/predict_GUF_'+Building_data+str(patch_n)
-        grass_union(v1_dir,v2_dir,out_dir,patch_n)
+        if Building_data != 'no' and Road_data == 'no':
+            print('Merging the predicted-GUF to Building data . . .')
+            time.sleep(3)
+            v1_dir=path_out+'/predict_GUF_mod'+str(patch_n)+'/predict_GUF_mod'+str(patch_n)+'.shp'
+            v2_dir=path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/'+Building_data+'_sh_clipped'+str(patch_n)+'.shp'
+            out_dir=path_out+'/predict_GUF_'+Building_data+str(patch_n)
+            grass_union(v1_dir,v2_dir,out_dir,patch_n)
 
-        predict_GUF_bld=gpd.read_file(path_out+'/predict_GUF_'+Building_data+str(patch_n)+'/predict_GUF_'+Building_data+str(patch_n)+'.shp')
-        predict_GUF_bld['LC']=predict_GUF_bld.a_LC
-        a=predict_GUF_bld[predict_GUF_bld.b_build==1]
-        predict_GUF_bld.loc[a.index,'LC']=4
-        predict_GUF_bld=predict_GUF_bld.drop(['a_cat','b_cat','a_LC','b_build'],axis=1)
-        predict_GUF_bld_temp=predict_GUF_bld.buffer(0)
-        predict_GUF_bld_temp=gpd.GeoDataFrame(predict_GUF_bld_temp)
-        predict_GUF_bld_temp['LC']=predict_GUF_bld['LC']
-        predict_GUF_bld_temp=predict_GUF_bld_temp.rename(columns={0:'geometry'})
-        predict_GUF_bld_temp.crs={'init' :'epsg:4326'}
-        print('dissolving the final result . . . .')
-        predict_GUF_bld_temp=predict_GUF_bld_temp.dissolve('LC')
-        predict_GUF_bld_temp=predict_GUF_bld_temp.reset_index()
-        predict_GUF_bld_temp.to_file(path_out+'/predict_GUF_'+Building_data+'_mod'+str(patch_n))
-        
+            predict_GUF_bld=gpd.read_file(path_out+'/predict_GUF_'+Building_data+str(patch_n)+'/predict_GUF_'+Building_data+str(patch_n)+'.shp')
+            predict_GUF_bld['LC']=predict_GUF_bld.a_LC
+            a=predict_GUF_bld[predict_GUF_bld.b_build==1]
+            predict_GUF_bld.loc[a.index,'LC']=4
+            predict_GUF_bld=predict_GUF_bld.drop(['a_cat','b_cat','a_LC','b_build'],axis=1)
+            predict_GUF_bld_temp=predict_GUF_bld.buffer(0)
+            predict_GUF_bld_temp=gpd.GeoDataFrame(predict_GUF_bld_temp)
+            predict_GUF_bld_temp['LC']=predict_GUF_bld['LC']
+            predict_GUF_bld_temp=predict_GUF_bld_temp.rename(columns={0:'geometry'})
+            predict_GUF_bld_temp.crs={'init' :'epsg:4326'}
+            print('dissolving the final result . . . .')
+            predict_GUF_bld_temp=predict_GUF_bld_temp.dissolve('LC')
+            predict_GUF_bld_temp=predict_GUF_bld_temp.reset_index()
+            predict_GUF_bld_temp.to_file(path_out+'/predict_GUF_'+Building_data+'_mod'+str(patch_n))
+
+        elif Road_data != 'no' and Building_data == 'no':
+            print('Merging the predicted-GUF to Road data . . .')
+            time.sleep(3)
+            v1_dir=path_out+'/predict_GUF_mod'+str(patch_n)+'/predict_GUF_mod'+str(patch_n)+'.shp'
+            v2_dir=path_out+'/'+'roads_'+str(patch_n)+'/'+'roads_'+str(patch_n)+'.shp'
+            out_dir=path_out+'/predict_GUF_roads_'+str(patch_n)
+            grass_union(v1_dir,v2_dir,out_dir,patch_n)
+
+            predict_GUF_rd=gpd.read_file(path_out+'/predict_GUF_roads_'+str(patch_n)+'/predict_GUF_roads_'+str(patch_n)+'.shp')
+            predict_GUF_rd['LC']=predict_GUF_rd.a_LC
+
+            a=predict_GUF_rd[predict_GUF_rd.b_cat==1]
+            predict_GUF_rd.loc[a.index,'LC']=5
+            b=predict_GUF_rd[predict_GUF_rd.LC==0]
+            predict_GUF_rd.loc[b.index,'LC']=4
+            c=predict_GUF_rd[predict_GUF_rd.LC==5]
+            predict_GUF_rd.loc[c.index,'LC']=0
+
+            predict_GUF_rd=predict_GUF_rd.drop(['cat','a_cat','b_cat','a_LC','b_FID'],axis=1)
+            predict_GUF_rd_temp=predict_GUF_rd.buffer(0)
+            predict_GUF_rd_temp=gpd.GeoDataFrame(predict_GUF_rd_temp)
+            predict_GUF_rd_temp['LC']=predict_GUF_rd['LC']
+            predict_GUF_rd_temp=predict_GUF_rd_temp.rename(columns={0:'geometry'})
+            predict_GUF_rd_temp.crs={'init' :'epsg:4326'}
+            print('dissolving the final result . . . .')
+            predict_GUF_rd_temp=predict_GUF_rd_temp.dissolve('LC')
+            predict_GUF_rd_temp=predict_GUF_rd_temp.reset_index()
+            predict_GUF_rd_temp.to_file(path_out+'/predict_GUF_roads'+'_mod'+str(patch_n))
+
+        elif Road_data != 'no' and Building_data != 'no':
+            print('Both Building and Road: Merging the predicted-GUF to Road data . . .')
+            time.sleep(3)
+            v1_dir=path_out+'/predict_GUF_mod'+str(patch_n)+'/predict_GUF_mod'+str(patch_n)+'.shp'
+            v2_dir=path_out+'/'+'roads_'+str(patch_n)+'/'+'roads_'+str(patch_n)+'.shp'
+            out_dir=path_out+'/predict_GUF_roads_'+str(patch_n)
+            grass_union(v1_dir,v2_dir,out_dir,patch_n)
+
+            predict_GUF_rd=gpd.read_file(path_out+'/predict_GUF_roads_'+str(patch_n)+'/predict_GUF_roads_'+str(patch_n)+'.shp')
+            predict_GUF_rd['LC']=predict_GUF_rd.a_LC
+
+            a=predict_GUF_rd[predict_GUF_rd.b_cat==1]
+            predict_GUF_rd.loc[a.index,'LC']=5
+            b=predict_GUF_rd[predict_GUF_rd.LC==0]
+            predict_GUF_rd.loc[b.index,'LC']=4
+            c=predict_GUF_rd[predict_GUF_rd.LC==5]
+            predict_GUF_rd.loc[c.index,'LC']=0
+
+            predict_GUF_rd=predict_GUF_rd.drop(['cat','a_cat','b_cat','a_LC','b_FID'],axis=1)
+            predict_GUF_rd_temp=predict_GUF_rd.buffer(0)
+            predict_GUF_rd_temp=gpd.GeoDataFrame(predict_GUF_rd_temp)
+            predict_GUF_rd_temp['LC']=predict_GUF_rd['LC']
+            predict_GUF_rd_temp=predict_GUF_rd_temp.rename(columns={0:'geometry'})
+            predict_GUF_rd_temp.crs={'init' :'epsg:4326'}
+            print('dissolving the result . . . .')
+            predict_GUF_rd_temp=predict_GUF_rd_temp.dissolve('LC')
+            predict_GUF_rd_temp=predict_GUF_rd_temp.reset_index()
+            predict_GUF_rd_temp.to_file(path_out+'/predict_GUF_roads'+'_mod'+str(patch_n))
+
+            print('Merging the predicted-GUF-roads to Building data . . .')
+            time.sleep(3)
+            v1_dir=path_out+'/predict_GUF_roads_mod'+str(patch_n)+'/predict_GUF_roads_mod'+str(patch_n)+'.shp'
+            v2_dir=path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/'+Building_data+'_sh_clipped'+str(patch_n)+'.shp'
+            out_dir=path_out+'/predict_GUF_roads_'+Building_data+str(patch_n)
+            grass_union(v1_dir,v2_dir,out_dir,patch_n)
+            
+            predict_GUF_rd_bd=gpd.read_file(path_out+'/predict_GUF_roads_'+Building_data+str(patch_n)+'/predict_GUF_roads_'+Building_data+str(patch_n)+'.shp')
+            predict_GUF_rd_bd['LC']=predict_GUF_rd_bd.a_LC
+
+            a=predict_GUF_rd_bd[predict_GUF_rd_bd.a_LC==4]
+            predict_GUF_rd_bd.loc[a.index,'LC']=5
+            b=predict_GUF_rd_bd[predict_GUF_rd_bd.b_build==1]
+            predict_GUF_rd_bd.loc[b.index,'LC']=4
+
+            predict_GUF_rd_bd=predict_GUF_rd_bd.drop(['cat','a_cat','b_cat','a_LC','b_build'],axis=1)
+            predict_GUF_rd_bd_temp=predict_GUF_rd_bd.buffer(0)
+            predict_GUF_rd_bd_temp=gpd.GeoDataFrame(predict_GUF_rd_bd_temp)
+            predict_GUF_rd_bd_temp['LC']=predict_GUF_rd_bd['LC']
+            predict_GUF_rd_bd_temp=predict_GUF_rd_bd_temp.rename(columns={0:'geometry'})
+            predict_GUF_rd_bd_temp.crs={'init' :'epsg:4326'}
+            print('dissolving the final result . . . .')
+            predict_GUF_rd_bd_temp=predict_GUF_rd_bd_temp.dissolve('LC')
+            predict_GUF_rd_bd_temp=predict_GUF_rd_bd_temp.reset_index()
+            predict_GUF_rd_bd_temp.to_file(path_out+'/predict_GUF_roads_'+Building_data+'_mod'+str(patch_n))
+
     else:
-        print('Merging the predicted to Building data . . .')
-        time.sleep(3)
-        v1_dir=path_out+'/predicted_shape'+str(patch_n)+'/predicted_shape'+str(patch_n)+'.shp'
-        v2_dir=path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/'+Building_data+'_sh_clipped'+str(patch_n)+'.shp'
-        out_dir=path_out+'/predict_'+Building_data+str(patch_n)
-        grass_union(v1_dir,v2_dir,out_dir,patch_n)
+        if Building_data != 'no' and Road_data == 'no':
+            print('Merging the predicted to Building data . . .')
+            time.sleep(3)
+            v1_dir=path_out+'/predicted_shape'+str(patch_n)+'/predicted_shape'+str(patch_n)+'.shp'
+            v2_dir=path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/'+Building_data+'_sh_clipped'+str(patch_n)+'.shp'
+            out_dir=path_out+'/predict_'+Building_data+str(patch_n)
+            grass_union(v1_dir,v2_dir,out_dir,patch_n)
 
-        predict_bld=gpd.read_file(path_out+'/predict_'+Building_data+str(patch_n)+'/predict_'+Building_data+str(patch_n)+'.shp')
-        predict_bld['LC']=predict_bld.a_predicte
-        a=predict_bld[predict_bld.b_build==1]
-        predict_bld.loc[a.index,'LC']=3
-        predict_bld=predict_bld.drop(['a_cat','b_cat','a_predicte','b_build'],axis=1)
-        predict_bld_temp=predict_bld.buffer(0)
-        predict_bld_temp=gpd.GeoDataFrame(predict_bld_temp)
-        predict_bld_temp['LC']=predict_bld['LC']
-        predict_bld_temp=predict_bld_temp.rename(columns={0:'geometry'})
-        predict_bld_temp.crs={'init' :'epsg:4326'}
-        print('dissolving the final result . . . .')
-        predict_bld_temp=predict_bld_temp.dissolve('LC')
-        predict_bld_temp=predict_bld_temp.reset_index()
-        predict_bld_temp.to_file(path_out+'/predict_'+Building_data+'_mod'+str(patch_n))
+            predict_bld=gpd.read_file(path_out+'/predict_'+Building_data+str(patch_n)+'/predict_'+Building_data+str(patch_n)+'.shp')
+            predict_bld['LC']=predict_bld.a_predicte
+            a=predict_bld[predict_bld.b_build==1]
+            predict_bld.loc[a.index,'LC']=3
+            predict_bld=predict_bld.drop(['a_cat','b_cat','a_predicte','b_build'],axis=1)
+            predict_bld_temp=predict_bld.buffer(0)
+            predict_bld_temp=gpd.GeoDataFrame(predict_bld_temp)
+            predict_bld_temp['LC']=predict_bld['LC']
+            predict_bld_temp=predict_bld_temp.rename(columns={0:'geometry'})
+            predict_bld_temp.crs={'init' :'epsg:4326'}
+            print('dissolving the final result . . . .')
+            predict_bld_temp=predict_bld_temp.dissolve('LC')
+            predict_bld_temp=predict_bld_temp.reset_index()
+            predict_bld_temp.to_file(path_out+'/predict_'+Building_data+'_mod'+str(patch_n))
 
 
 path_out = cname
-nx=1
-ny=1
 all_lats=np.linspace(lat_right_bot_t,lat_left_top_t,num=ny+1)
 all_lons=np.linspace(lon_left_top_t,lon_right_bot_t,num=nx+1)
 patch_n=0
@@ -805,11 +941,8 @@ for i in range(0,len(all_lons)-1):
         if skip_patch!='y':
             lat_right_bot,lat_left_top=[all_lats[j],all_lats[j+1]]
 
-
             coords_top=[lat_left_top, lon_left_top]
             coords_bot=[lat_right_bot, lon_right_bot]
-
-
 
             download_data(path_out,coords_top,coords_bot,patch_n)
             save_images(path_out,patch_n)
