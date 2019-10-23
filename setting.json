@@ -4,14 +4,29 @@
         "s_date": "2016-01-01",
         "e_date": "2019-06-01",
         "coord_top": [
-            51.513037, -0.154443
+            51.522449, -0.165291
         ],
         "coord_bot": [
-            51.499922, -0.086468
+            51.487396, -0.036623
         ],
         "GUF_data": "yes",
-        "building_data": "OSM",
+        "building_data": "no",
         "building_dir": "",
+        "road_data": "OSM"
+    },
+    "Pittsburgh": {
+        "downloading_img": "yes",
+        "s_date": "2016-01-01",
+        "e_date": "2019-06-01",
+        "coord_top": [
+            40.459135, -80.032734
+        ],
+        "coord_bot": [
+            40.439241, -79.987312
+        ],
+        "GUF_data": "yes",
+        "building_data": "no",
+        "building_dir": "Data/Buildings_US_Microsoft/Pennsylvania.geojson",
         "road_data": "OSM"
     },
     "Colombo": {
@@ -19,12 +34,25 @@
         "s_date": "2016-01-01",
         "e_date": "2019-06-01",
         "coord_top": [
-            6.971339,
-            79.815947
+            6.970914, 79.856638
         ],
         "coord_bot": [
-            6.930781,
-            79.899808
+            6.954889, 79.921885
+        ],
+        "GUF_data": "yes",
+        "building_data": "no",
+        "building_dir": "",
+        "road_data": "OSM"
+    },
+    "Glasgow": {
+        "downloading_img": "yes",
+        "s_date": "2016-01-01",
+        "e_date": "2019-06-01",
+        "coord_top": [
+            55.884461, -4.366182
+        ],
+        "coord_bot": [
+            55.819934, -4.206181
         ],
         "GUF_data": "yes",
         "building_data": "no",
