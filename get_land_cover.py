@@ -4,11 +4,15 @@ import numpy as np
 from task_util import other_tasks
 from other_util import download_data,save_images
 from predict_util import predict_image
+from fraction_util import calculate_fraction
 
+cname = 'London'
+nx=4
+ny=4
 
-cname = 'Glasgow'
-nx=1
-ny=1
+# This is the resolution for fraction calculation for each patch
+xn=20
+yn=20
 
 with open('./setting.json') as setting_file:
     settings = json.load(setting_file)
@@ -20,7 +24,7 @@ e_date = settings[cname]['e_date']
 [lat_left_top_t, lon_left_top_t] = settings[cname]['coord_top'] 
 [lat_right_bot_t, lon_right_bot_t] = settings[cname]['coord_bot']
 
-size = 10
+size = 10 # display parameter. Do not change
 scale = abs(lat_left_top_t-lat_right_bot_t)/abs(lon_left_top_t-lon_right_bot_t)
 
 GUF_data = settings[cname]['GUF_data'] == 'yes'
@@ -62,5 +66,7 @@ for i in range(0,len(all_lons)-1):
                         Road_data,building_dir,list_of_GUF,
                         lat_left_top, lon_left_top,
                         lat_right_bot, lon_right_bot)
+
+            calculate_fraction(path_out,patch_n,xn,yn)
         patch_n=patch_n+1
 #%%

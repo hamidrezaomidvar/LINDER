@@ -8,7 +8,7 @@ import time
 import numpy as np
 import os
 from clip_util import clip_shp
-from grass_util import grass_union
+from grass_util import grass_overlay
 import json
 import osmnx as ox
 from pathlib import Path
@@ -118,7 +118,7 @@ def other_tasks(path_out,patch_n,GUF_data,Building_data,Road_data,building_dir
         v1_dir=path_out+'/predicted_shape'+str(patch_n)+'/predicted_shape'+str(patch_n)+'.shp'
         v2_dir=path_out+'/urban_foot_shape'+str(patch_n)+'/urban_foot_shape'+str(patch_n)+'.shp'
         out_dir=path_out+'/predict_GUF'+str(patch_n)
-        grass_union(v1_dir,v2_dir,out_dir,patch_n,path_out)
+        grass_overlay(v1_dir,v2_dir,out_dir,patch_n,path_out)
         
         predict_GUF=gpd.read_file(path_out+'/predict_GUF'+str(patch_n)+'/predict_GUF'+str(patch_n)+'.shp')
         predict_GUF=predict_GUF[~np.isnan(predict_GUF.a_predicte)]
@@ -279,7 +279,7 @@ def other_tasks(path_out,patch_n,GUF_data,Building_data,Road_data,building_dir
             v1_dir=path_out+'/predict_GUF_mod'+str(patch_n)+'/predict_GUF_mod'+str(patch_n)+'.shp'
             v2_dir=path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/'+Building_data+'_sh_clipped'+str(patch_n)+'.shp'
             out_dir=path_out+'/predict_GUF_'+Building_data+str(patch_n)
-            grass_union(v1_dir,v2_dir,out_dir,patch_n,path_out)
+            grass_overlay(v1_dir,v2_dir,out_dir,patch_n,path_out)
 
             predict_GUF_bld=gpd.read_file(path_out+'/predict_GUF_'+Building_data+str(patch_n)+'/predict_GUF_'+Building_data+str(patch_n)+'.shp')
             predict_GUF_bld['LC']=predict_GUF_bld.a_LC
@@ -302,7 +302,7 @@ def other_tasks(path_out,patch_n,GUF_data,Building_data,Road_data,building_dir
             v1_dir=path_out+'/predict_GUF_mod'+str(patch_n)+'/predict_GUF_mod'+str(patch_n)+'.shp'
             v2_dir=path_out+'/'+'roads_'+str(patch_n)+'/'+'roads_'+str(patch_n)+'.shp'
             out_dir=path_out+'/predict_GUF_roads_'+str(patch_n)
-            grass_union(v1_dir,v2_dir,out_dir,patch_n,path_out)
+            grass_overlay(v1_dir,v2_dir,out_dir,patch_n,path_out)
 
             predict_GUF_rd=gpd.read_file(path_out+'/predict_GUF_roads_'+str(patch_n)+'/predict_GUF_roads_'+str(patch_n)+'.shp')
             predict_GUF_rd['LC']=predict_GUF_rd.a_LC
@@ -331,7 +331,7 @@ def other_tasks(path_out,patch_n,GUF_data,Building_data,Road_data,building_dir
             v1_dir=path_out+'/predict_GUF_mod'+str(patch_n)+'/predict_GUF_mod'+str(patch_n)+'.shp'
             v2_dir=path_out+'/'+'roads_'+str(patch_n)+'/'+'roads_'+str(patch_n)+'.shp'
             out_dir=path_out+'/predict_GUF_roads_'+str(patch_n)
-            grass_union(v1_dir,v2_dir,out_dir,patch_n,path_out)
+            grass_overlay(v1_dir,v2_dir,out_dir,patch_n,path_out)
 
             predict_GUF_rd=gpd.read_file(path_out+'/predict_GUF_roads_'+str(patch_n)+'/predict_GUF_roads_'+str(patch_n)+'.shp')
             predict_GUF_rd['LC']=predict_GUF_rd.a_LC
@@ -359,7 +359,7 @@ def other_tasks(path_out,patch_n,GUF_data,Building_data,Road_data,building_dir
             v1_dir=path_out+'/predict_GUF_roads_mod'+str(patch_n)+'/predict_GUF_roads_mod'+str(patch_n)+'.shp'
             v2_dir=path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/'+Building_data+'_sh_clipped'+str(patch_n)+'.shp'
             out_dir=path_out+'/predict_GUF_roads_'+Building_data+str(patch_n)
-            grass_union(v1_dir,v2_dir,out_dir,patch_n,path_out)
+            grass_overlay(v1_dir,v2_dir,out_dir,patch_n,path_out)
             
             predict_GUF_rd_bd=gpd.read_file(path_out+'/predict_GUF_roads_'+Building_data+str(patch_n)+'/predict_GUF_roads_'+Building_data+str(patch_n)+'.shp')
             predict_GUF_rd_bd['LC']=predict_GUF_rd_bd.a_LC
@@ -387,7 +387,7 @@ def other_tasks(path_out,patch_n,GUF_data,Building_data,Road_data,building_dir
             v1_dir=path_out+'/predicted_shape'+str(patch_n)+'/predicted_shape'+str(patch_n)+'.shp'
             v2_dir=path_out+'/'+Building_data+'_sh_clipped'+str(patch_n)+'/'+Building_data+'_sh_clipped'+str(patch_n)+'.shp'
             out_dir=path_out+'/predict_'+Building_data+str(patch_n)
-            grass_union(v1_dir,v2_dir,out_dir,patch_n,path_out)
+            grass_overlay(v1_dir,v2_dir,out_dir,patch_n,path_out)
 
             predict_bld=gpd.read_file(path_out+'/predict_'+Building_data+str(patch_n)+'/predict_'+Building_data+str(patch_n)+'.shp')
             predict_bld['LC']=predict_bld.a_predicte

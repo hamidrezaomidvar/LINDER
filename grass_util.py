@@ -15,7 +15,7 @@ import grass.script as gscript
 import grass.script.setup as gsetup
 
 
-def grass_union(v1_dir,v2_dir,out_dir,patch_n,path_out):
+def grass_overlay(v1_dir,v2_dir,out_dir,patch_n,path_out,how='or'):
     gsetup.init(gisbase, gisdb, location, mapset)
 
     gscript.run_command("g.proj",flags="c" ,proj4="+proj=longlat +datum=WGS84 +no_defs")
@@ -51,7 +51,7 @@ def grass_union(v1_dir,v2_dir,out_dir,patch_n,path_out):
     atype="area", 
     binput="vector4", 
     btype="area", 
-    operator='or', 
+    operator=how, 
     snap=0, 
     output="output_b")
 
