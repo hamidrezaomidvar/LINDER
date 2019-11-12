@@ -58,5 +58,20 @@
         "building_data": "no",
         "building_dir": "",
         "road_data": "OSM"
+    },
+    "Preston": {
+        "downloading_img": "yes",
+        "s_date": "2016-01-01",
+        "e_date": "2019-06-01",
+        "coord_top": [
+            -37.726262,145.008293
+        ],
+        "coord_bot": [
+            -37.735499,145.019681
+        ],
+        "GUF_data": "yes",
+        "building_data": "no",
+        "building_dir": "",
+        "road_data": "OSM"
     }
 }

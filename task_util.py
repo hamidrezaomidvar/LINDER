@@ -14,6 +14,64 @@ import osmnx as ox
 from pathlib import Path
 import ast
 import sys
+from rasterio.merge import merge
+
+
+def find_overlap(path_out,patch_n,list_of_GUF):
+    
+    with fiona.open(path_out+"/shape_box"+str(patch_n)+"/shape_box"+str(patch_n)+".shp", "r") as shapefile:
+        features = [feature["geometry"] for feature in shapefile]
+
+    overlap_found=0
+    for GUF_data_dir in list_of_GUF:
+
+        try:
+            with rasterio.open(GUF_data_dir) as src:
+                    out_image, out_transform = rasterio.mask.mask(src, features,
+                                                            crop=True)
+                    out_meta = src.meta.copy()
+            overlap_found +=1
+            
+
+            out_meta.update({"driver": "GTiff",
+            "height": out_image.shape[1],
+            "width": out_image.shape[2],
+            "transform": out_transform})
+            
+            with rasterio.open(path_out+"/masked_footprint"+str(patch_n)+str(overlap_found)+".tif", "w", **out_meta) as dest:
+                    dest.write(out_image)
+
+
+        except:
+            pass
+    return overlap_found
+
+
+def merger(overlap_found,path_out,patch_n):
+    all_files=[]
+    for i in range(1,overlap_found+1):
+        all_files.append(path_out+"/masked_footprint"+str(patch_n)+str(i)+".tif")
+
+    src_files_to_mosaic=[]
+    for fp in all_files:
+        src = rasterio.open(fp)
+        src_files_to_mosaic.append(src)
+
+    mosaic, out_trans = merge(src_files_to_mosaic)
+    out_meta = src.meta.copy()
+
+    out_meta.update({"driver": "GTiff",
+                        "height": mosaic.shape[1],
+                         "width": mosaic.shape[2],
+                         "transform": out_trans,
+                    }
+                    )
+
+    out_fp=path_out+"/masked_footprint"+str(patch_n)+".tif"
+
+    with rasterio.open(out_fp, "w", **out_meta) as dest:
+        dest.write(mosaic)
+
 
 
 def other_tasks(path_out,patch_n,GUF_data,Building_data,Road_data,building_dir
@@ -28,39 +86,20 @@ def other_tasks(path_out,patch_n,GUF_data,Building_data,Road_data,building_dir
 
     if GUF_data:
         print('Clipping the GUF data . . .')
-        with fiona.open(path_out+"/shape_box"+str(patch_n)+"/shape_box"+str(patch_n)+".shp", "r") as shapefile:
-            features = [feature["geometry"] for feature in shapefile]
-            
-        overlap_found=0
-        for GUF_data_dir in list_of_GUF:
-            
-            try:
-                with rasterio.open(GUF_data_dir) as src:
-                        out_image, out_transform = rasterio.mask.mask(src, features,
-                                                                crop=True)
-                        out_meta = src.meta.copy()
-                overlap_found +=1
-
-                out_meta.update({"driver": "GTiff",
-                "height": out_image.shape[1],
-                "width": out_image.shape[2],
-                "transform": out_transform})
-
-                with rasterio.open(path_out+"/masked_footprint"+str(patch_n)+".tif", "w", **out_meta) as dest:
-                            dest.write(out_image)
-                
-            
-            except:
-                pass
+        overlap_found=find_overlap(path_out,patch_n,list_of_GUF)
 
         if overlap_found == 0:
             print('Overlap is not found . . .')
             sys.exit()
         elif overlap_found == 1:
             print('Overlap is found. Clipping the data..')
+            name1=path_out+"/masked_footprint"+str(patch_n)+str(overlap_found)+".tif"
+            name2=path_out+"/masked_footprint"+str(patch_n)+".tif"
+            os.rename(name1,name2)
         else:
             print('more than one overlap is found . . .')
-            sys.exit()
+            merger(overlap_found,path_out,patch_n)
+            
 
         mask = None
         with rasterio.Env():
