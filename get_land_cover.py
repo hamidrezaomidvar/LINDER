@@ -7,8 +7,8 @@ from predict_util import predict_image
 from fraction_util import calculate_fraction
 
 cname = 'London'
-nx=4
-ny=4
+nx=1
+ny=1
 
 # This is the resolution for fraction calculation for each patch
 xn=20
