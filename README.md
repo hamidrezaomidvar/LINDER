@@ -1,4 +1,10 @@
 # Pipeline for calculating land cover over urban/rural areas:
+
+## which file to read first?
+
+`get_land_cover.py`
+
+## details
 This is a pipeline for calculating the landcover over desired regions. It includes:
 
 - Step 1: Getting the location of the region (lat and lon)
