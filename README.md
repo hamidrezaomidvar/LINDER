@@ -4,14 +4,57 @@
 
 `get_land_cover.py`
 
+## Required libraries
+
+### Grass
+
+for macOS, download and install the grass package:
+```
+http://grassmac.wikidot.com/downloads
+```
+
+
+### other python libraries
+
+- `pipreqs`
+
+Install `pipreqs` to collect other necessary libraries in the next step:
+`pip install pipreqs`
+
+- others
+
+```zsh
+# collect necessary packages: this will save package info into `requirements.txt`
+pipreqs .
+# install collected packages:
+pip install -r requirements.txt
+# uninstall `grass`, which is an incorrect package identified by `pipreqs`
+pip uninstall grass
+```
+
+## configuration
+
+### sentinel-hub
+
+refer to [this page for setting up a new configuration](https://eo-learn.readthedocs.io/en/latest/examples/land-cover-map/SI_LULC_pipeline.html#Requirements).
+Then update the `sentinelhub` instance ID as follows:
+```
+sentinelhub.config --instance_id [your-instance-ID]
+```
+
+
 ## details
 This is a pipeline for calculating the landcover over desired regions. It includes:
 
-- Step 1: Getting the location of the region (lat and lon)
+- Step 1: Getting the location of the region (`lat` and `lon`)
 
 - Step 2: Getting the satellite image for the desired region
 
-- Step 3: Prediction of the land cover into 3 gategories: 1-Water 2-Green 3-Urban and other
+- Step 3: Prediction of the land cover into 3 categories:
+  - 1-Water
+  - 2-Green
+  - 3-Urban and
+  - 4-other
 
 - Step 4: Overlaying the [GUF](https://www.dlr.de/eoc/en/desktopdefault.aspx/tabid-9628/16557_read-40454/) data into the prediction. Therefore the landcover becomes 1-Water 2-Green 3-Urban 4-Other
 
@@ -21,9 +64,10 @@ Using this pipeline is as simple as choosing the coordinates, and providing the 
 
 Some technical details:
 
-- Merging various maps might be very computationally expensive, and the current Python packages like GDAL are not very efficients. The pipeline instead uses a python interface to use GRASS functions (such as `v.overlay`) directly to speed up the merging processes. 
+- Merging various maps might be very computationally expensive, and the current Python packages like GDAL are not very efficient.
+  The pipeline instead uses a python interface to use GRASS functions (such as `v.overlay`) directly to speed up the merging processes.
 
-- The pipeline uses a pre-trained model to predict the land cover. Currently, the model is trained over Colombo, but various tests has shown it has a good perfomance on other places as well. A more sophesticated model can be trained by using more datasets.
+- The pipeline uses a pre-trained model to predict the land cover. Currently, the model is trained over Colombo, but various tests has shown it has a good performance on other places as well. A more sophisticated model can be trained by using more datasets.
 
 - Note that while OSM data are automatically fetched from the website for the desired region, the Microsoft data are needed to be downloaded for the chosen location. This can be improved in the future.
 
