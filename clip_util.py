@@ -1,15 +1,16 @@
 def clip_points(shp, clip_obj):
-    '''
+    """
     Docs Here
-    '''
+    """
 
     poly = clip_obj.geometry.unary_union
-    return(shp[shp.geometry.intersects(poly)])
+    return shp[shp.geometry.intersects(poly)]
+
 
 def clip_line_poly(shp, clip_obj):
-    '''
+    """
     docs
-    '''
+    """
 
     # Create a single polygon object for clipping
     poly = clip_obj.geometry.unary_union
@@ -23,16 +24,17 @@ def clip_line_poly(shp, clip_obj):
 
     # Clip the data - with these data
     clipped = shp_sub.copy()
-    
-    clipped['geometry'] = shp_sub.intersection(poly)
+
+    clipped["geometry"] = shp_sub.intersection(poly)
 
     # Return the clipped layer with no null geometry values
-    return(clipped[clipped.geometry.notnull()])
+    return clipped[clipped.geometry.notnull()]
+
 
 def clip_shp(shp, clip_obj):
-    '''
-    '''
+    """
+    """
     if shp["geometry"].iloc[0].type == "Point":
-        return(clip_points(shp, clip_obj))
+        return clip_points(shp, clip_obj)
     else:
-        return(clip_line_poly(shp, clip_obj))
+        return clip_line_poly(shp, clip_obj)
