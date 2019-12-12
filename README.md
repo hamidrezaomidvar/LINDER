@@ -16,21 +16,25 @@ http://grassmac.wikidot.com/downloads
 
 ### other python libraries
 
-- `pipreqs`
-
-Install `pipreqs` to collect other necessary libraries in the next step:
-`pip install pipreqs`
-
-- others
-
+use `conda` to create a fresh environment for this pipeline:
 ```zsh
-# collect necessary packages: this will save package info into `requirements.txt`
-pipreqs .
-# install collected packages:
-pip install -r requirements.txt
-# uninstall `grass`, which is an incorrect package identified by `pipreqs`
-pip uninstall grass
+conda env create -f GDAL.yml
 ```
+
+Dependency details refer to [`GDAL.yml`](./GDAL.yml).
+
+
+## Dependency datasets
+
+### `nc_spm_08`
+
+This folder includes projection files required by `GRASS`.
+
+### `GUF` dataset (optional)
+
+[GUF](https://www.dlr.de/eoc/en/desktopdefault.aspx/tabid-9628/16557_read-40454/) is a global urban fraction dataset produced by DLR.
+This pipeline use `GUF` to improve accuracy in predicting urban features.
+
 
 ## configuration
 
@@ -67,9 +71,11 @@ Some technical details:
 - Merging various maps might be very computationally expensive, and the current Python packages like GDAL are not very efficient.
   The pipeline instead uses a python interface to use GRASS functions (such as `v.overlay`) directly to speed up the merging processes.
 
-- The pipeline uses a pre-trained model to predict the land cover. Currently, the model is trained over Colombo, but various tests has shown it has a good performance on other places as well. A more sophisticated model can be trained by using more datasets.
+- The pipeline uses a pre-trained model to predict the land cover.
+  Currently, the model is trained over Colombo, but various tests has shown it has a good performance on other places as well.
+  A more sophisticated model can be trained by using more datasets.
 
-- Note that while OSM data are automatically fetched from the website for the desired region, the Microsoft data are needed to be downloaded for the chosen location. This can be improved in the future.
+- Note that while OSM data are automatically fetched from the website for the desired region, the Microsoft data need to be downloaded for the chosen location manually. This can be automated in the future.
 
 
 ## Some examples
