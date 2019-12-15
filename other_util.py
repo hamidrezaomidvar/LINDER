@@ -108,7 +108,7 @@ def download_data(
                 ),
                 "time_interval": time_interval,
             },
-            save: {"eopatch_folder": "eopatch_{}".format(patch_n)},
+            save: {"eopatch_folder": f"eopatch_{patch_n}"},
         }
     )
 
@@ -130,14 +130,16 @@ def save_images(path_out, patch_n, scale):
     # Draw the RGB image
     size = 20
     (Path(path_out) / f"eopatch_{patch_n}").mkdir(exist_ok=True)
-    eopatch = EOPatch.load("{}/eopatch_{}".format(path_out, patch_n), lazy_loading=True)
-    image_dir = path_out + "/images/patch_" + str(patch_n)
+    eopatch = EOPatch.load(f"{path_out}/eopatch_{patch_n}", lazy_loading=True)
+    image_dir = Path(path_out) / "images" / f"patch_{patch_n}"
     if not os.path.isdir(image_dir):
         os.makedirs(image_dir)
 
-    print("saving the images into " + image_dir + ". . .")
-    n_pics = eopatch.data["BANDS"].shape[0]
-    for i in range(n_pics):
+    print(f"saving the images into {image_dir} . . .")
+    # n_pics = eopatch.data["BANDS"].shape[0]
+    list_timestamp=eopatch.timestamp
+    for i,timestamp in enumerate(list_timestamp):
+        str_ts=timestamp.isoformat()
 
         fig = plt.figure(figsize=(size * 1, size * scale))
         ax = plt.subplot(1, 1, 1)
@@ -145,7 +147,8 @@ def save_images(path_out, patch_n, scale):
         plt.xticks([])
         plt.yticks([])
         ax.set_aspect("auto")
-        dr = image_dir + "/" + str(i) + ".png"
-        print("Saving " + dr)
+        fn=f"{str_ts}.png"
+        dr = image_dir / fn
+        print(f"Saving {dr}")
         plt.savefig(dr)
         plt.close()
