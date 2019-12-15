@@ -10,13 +10,13 @@ gisbase = "/Applications/GRASS-7.6.app/Contents/Resources"
 os.environ["GISBASE"] = gisbase
 grass_pydir = os.path.join(gisbase, "etc", "python")
 sys.path.append(grass_pydir)
-os.environ["LD_LIBRARY_PATH"] = "/Applications/GRASS-7.6.app/Contents/Resources/lib"
+os.environ["LD_LIBRARY_PATH"] = os.path.join(gisbase,"lib")
 import grass.script as gscript
 import grass.script.setup as gsetup
 
 
 def grass_overlay(v1_dir, v2_dir, out_dir, patch_n, path_out, how="or"):
-    # TODO: check if gisdb folders exist?
+    # TODO: check if gisdb/nc_spm_08 folders exist?
     gsetup.init(gisbase, gisdb, location, mapset)
 
     gscript.run_command(
