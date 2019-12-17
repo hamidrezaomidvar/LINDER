@@ -26,13 +26,14 @@ Dependency details refer to [`GDAL.yml`](./GDAL.yml).
 
 ## Dependency datasets
 
-### `nc_spm_08`
+### `nc_spm_08` dataset
 
-This folder includes projection files required by `GRASS`.
+This dataset includes projection files required by `GRASS`.
+download it [here](https://grassbook.org/datasets/datasets-3rd-edition/).
 
 ### `GUF` dataset (optional)
 
-[GUF](https://www.dlr.de/eoc/en/desktopdefault.aspx/tabid-9628/16557_read-40454/) is a global urban fraction dataset produced by DLR.
+[GUF (Global Urban Footprint)](https://www.dlr.de/eoc/en/desktopdefault.aspx/tabid-9628/16557_read-40454/) is a global urban coverage dataset produced by DLR.
 This pipeline use `GUF` to improve accuracy in predicting urban features.
 
 

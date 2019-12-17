@@ -73,5 +73,20 @@
         "building_data": "no",
         "building_dir": "",
         "road_data": "OSM"
+    },
+    "Changsha": {
+        "downloading_img": "yes",
+        "s_date": "2001-01-01",
+        "e_date": "2019-06-01",
+        "coord_top": [
+            28.2267, 112.9067
+        ],
+        "coord_bot": [
+            28.2067, 112.9267
+        ],
+        "GUF_data": "yes",
+        "building_data": "no",
+        "building_dir": "",
+        "road_data": "OSM"
     }
 }

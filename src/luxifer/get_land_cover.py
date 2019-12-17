@@ -8,9 +8,10 @@ from other_util import download_data, save_images
 from predict_util import predict_image
 from fraction_util import calculate_fraction
 
-cname = "London"
-# cname = 'Changsha'
-# TODO: what are nx and ny?
+# cname = "London"
+cname = "Changsha"
+
+# numbers of patches in x/y directions
 nx = 1
 ny = 1
 
@@ -88,4 +89,4 @@ for i in range(0, len(all_lons) - 1):
 
             calculate_fraction(path_out, patch_n, xn, yn)
         patch_n = patch_n + 1
-#%%
+

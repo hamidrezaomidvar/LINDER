@@ -94,7 +94,9 @@ def download_data(
     )
     # Execute the workflow
 
-    time_interval = [s_date, e_date]  # time interval for the SH request
+    # time interval for the SH request
+    # TODO: need to check if specified time interval is valid
+    time_interval = [s_date, e_date]
 
     # define additional parameters of the workflow
     execution_args = []
