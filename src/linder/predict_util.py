@@ -1,24 +1,26 @@
-import joblib
-from eolearn.core import (
-    EOTask,
-    EOPatch,
-    LinearWorkflow,
-    FeatureType,
-    OverwritePermission,
-    LoadFromDisk,
-    SaveToDisk,
-    EOExecutor,
-)
-from sent_util import ConcatenateData, PredictPatch, LULC
-from eolearn.io import ExportToTiff
 import os
-import matplotlib as mpl
-import numpy as np
-import matplotlib.pyplot as plt
 
+import joblib
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+from eolearn.core import (
+    EOExecutor,
+    EOPatch,
+    EOTask,
+    FeatureType,
+    LinearWorkflow,
+    LoadFromDisk,
+    OverwritePermission,
+    SaveToDisk,
+)
+from eolearn.io import ExportToTiff
+
+from .sent_util import LULC, ConcatenateData, PredictPatch
+from ._env import path_module
 
 def predict_image(path_out, patch_n, scale):
-    model_path = "./model.pkl"
+    model_path = path_module/"model.pkl"
     model = joblib.load(model_path)
 
     cnt = "n"

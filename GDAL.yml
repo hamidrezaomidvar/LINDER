@@ -12,6 +12,8 @@ dependencies:
   - osmnx
   - llvmlite
   - numba
+  - jupyter
+  - pylint
   - pip
   - pip:
     - eo-learn

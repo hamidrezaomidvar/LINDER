@@ -1,32 +1,56 @@
-from eolearn.io import S2L1CWCSInput
-from eolearn.core import (
-    FeatureType,
-    SaveToDisk,
-    LinearWorkflow,
-    OverwritePermission,
-    EOExecutor,
-    EOPatch,
-)
-from sentinelhub import CustomUrlParam, CRS, BBox
-from eolearn.mask import (
-    AddCloudMaskTask,
-    get_s2_pixel_cloud_detector,
-    AddValidDataMaskTask,
-)
-from sent_util import (
-    NormalizedDifferenceIndex,
-    EuclideanNorm,
-    SentinelHubValidData,
-    CountValid,
-)
 import os
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+from eolearn.core import (
+    EOExecutor,
+    EOPatch,
+    FeatureType,
+    LinearWorkflow,
+    OverwritePermission,
+    SaveToDisk,
+)
+from eolearn.io import S2L1CWCSInput
+from eolearn.mask import (
+    AddCloudMaskTask,
+    AddValidDataMaskTask,
+    get_s2_pixel_cloud_detector,
+)
+from sentinelhub import CRS, BBox, CustomUrlParam, config
+
+from .sent_util import (
+    CountValid,
+    EuclideanNorm,
+    NormalizedDifferenceIndex,
+    SentinelHubValidData,
+)
+
+
+def check_sentinel_cfg():
+    dict_sc = config.SHConfig().get_config_dict()
+    str_id=dict_sc["instance_id"]
+    if str_id:
+        # print(f"instance_id `{str_id}` is found.")
+        pass
+    else:
+        raise RuntimeError(
+            "\n".join(
+                [
+                    "sentinelhub has NOT been set up with a valid `instance_id`:",
+                    "please set it up following",
+                    "https://eo-learn.readthedocs.io/en/latest/examples/land-cover-map/SI_LULC_pipeline.html#Requirements.",
+                ]
+            )
+        )
 
 
 def download_data(
-    path_out, coords_top, coords_bot, patch_n, s_date, e_date, downloading_img
+    path_out, coords_top, coords_bot, patch_n, s_date, e_date, download_img
 ):
+    # before moving onto actual tasks, check setup
+    check_sentinel_cfg()
+
     [lat_left_top, lon_left_top] = coords_top
     [lat_right_bot, lon_right_bot] = coords_bot
     # TASK FOR BAND DATA
@@ -114,18 +138,17 @@ def download_data(
         }
     )
 
-    if downloading_img:
+    if download_img:
         executor = EOExecutor(workflow, execution_args, save_logs=True)
 
         print("Downloading Satellite data . . .")
 
         executor.run(workers=2, multiprocess=False)
+        if executor.get_failed_executions():
+            raise RuntimeError("EOExecutor failed in finishing tasks!")
 
         executor.make_report()
         print("Satellite data is downloaded")
-
-
-from pathlib import Path
 
 
 def save_images(path_out, patch_n, scale):
@@ -139,9 +162,9 @@ def save_images(path_out, patch_n, scale):
 
     print(f"saving the images into {image_dir} . . .")
     # n_pics = eopatch.data["BANDS"].shape[0]
-    list_timestamp=eopatch.timestamp
-    for i,timestamp in enumerate(list_timestamp):
-        str_ts=timestamp.isoformat()
+    list_timestamp = eopatch.timestamp
+    for i, timestamp in enumerate(list_timestamp):
+        str_ts = timestamp.isoformat()
 
         fig = plt.figure(figsize=(size * 1, size * scale))
         ax = plt.subplot(1, 1, 1)
@@ -149,8 +172,8 @@ def save_images(path_out, patch_n, scale):
         plt.xticks([])
         plt.yticks([])
         ax.set_aspect("auto")
-        fn=f"{str_ts}.png"
-        dr = image_dir / fn
-        print(f"Saving {dr}")
-        plt.savefig(dr)
+        fn = f"{str_ts}.png"
+        path_img = image_dir / fn
+        print(f"Saving {path_img}")
+        plt.savefig(path_img)
         plt.close()

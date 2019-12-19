@@ -1,7 +1,7 @@
 from setuptools import setup
 import pandas as pd
 
-ser_ver = pd.read_json("./luxifer/luxifer_version.json", typ="series")
+ser_ver = pd.read_json("./linder/linder_version.json", typ="series")
 print(ser_ver)
 __version__ = f"{ser_ver.ver_milestone}.{ser_ver.ver_major}.{ser_ver.ver_minor}{ser_ver.ver_remark}"
 
@@ -12,12 +12,12 @@ def readme():
 
 
 setup(
-    name="luxifer",
+    name="linder",
     version=__version__,
-    description="luxifer is a machine-learning based land use/land cover (LULC) classifier using Sentinel imagery.",
+    description="linder is a machine-learning based land use/land cover (LULC) classifier using Sentinel imagery.",
     long_description=readme(),
     long_description_content_type="text/markdown",
-    url="https://github.com/sunt05/SuPy",
+    url="",
     author=", ".join(["Dr Hamidreza Omidvar", "Dr Ting Sun", ]),
     author_email=", ".join(
         [
@@ -26,13 +26,13 @@ setup(
         ]
     ),
     license="GPL-V3.0",
-    packages=["luxifer"],
-    package_data={"luxifer": ["*.json",]},
+    packages=["linder"],
+    package_data={"linder": ["*.json",]},
     # distclass=BinaryDistribution,
     ext_modules=[],
     install_requires=[
-        "numpy>=1.17.4",
-        "pandas>=0.25.1",
+        "numpy",
+        "pandas",
         "scipy",
         "scikit-learn",
         "matplotlib",

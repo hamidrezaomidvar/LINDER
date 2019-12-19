@@ -1,5 +1,5 @@
 ###########################################################################
-# luxifer - Land Use ClaSsIFiER
+# linder - Land Use ClaSsIFiER
 # Authors:
 # Hamidreza Omidvar, h.omidvar@reading.ac.uk
 # Ting Sun, ting.sun@reading.ac.uk
@@ -10,13 +10,13 @@
 
 
 # core functions
-from ._luxifer_module import (
+from ._linder_module import (
     get_land_cover
 )
 
 
 # utilities
-from . import util
+# from . import util
 
 
 # version info
@@ -25,9 +25,9 @@ from ._version import show_version, __version__
 
 # module docs
 __doc__ = """
-luxifer - Land Use ClaSsIFiER
+linder - Land cover INDexER
 =====================================
 
-luxifer is a machine-learning based land use/land cover (LULC) classifier using Sentinel imagery.
+linder is a machine-learning based land cover indexer using Sentinel imagery.
 
 """

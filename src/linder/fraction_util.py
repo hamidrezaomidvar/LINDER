@@ -2,7 +2,7 @@ import geopandas as gpd
 from shapely.geometry import Polygon
 import numpy as np
 import pandas as pd
-from grass_util import grass_overlay
+from .grass_util import grass_overlay
 
 
 def calculate_fraction(path_out, patch_n, xn, yn):

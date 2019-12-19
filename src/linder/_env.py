@@ -16,7 +16,7 @@ path_module = Path(inspect.getsourcefile(lambda: 0)).resolve().parent
 FORMATTER = logging.Formatter(u"%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 # log file name
-LOG_FILE = "lucifer.log"
+LOG_FILE = "linder.log"
 
 
 def get_console_handler():
@@ -52,5 +52,5 @@ def get_logger(logger_name, level=logging.DEBUG):
     return logger
 
 
-logger_supy = get_logger("lucifer", logging.INFO)
-logger_supy.debug("a debug message from lucifer")
+logger_linder = get_logger("linder", logging.INFO)
+logger_linder.debug("a debug message from linder")

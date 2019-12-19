@@ -7,14 +7,15 @@ from rasterio.features import shapes
 import time
 import numpy as np
 import os
-from clip_util import clip_shp
-from grass_util import grass_overlay
+from .clip_util import clip_shp
+from .grass_util import grass_overlay
 import json
 import osmnx as ox
 from pathlib import Path
 import ast
 import sys
 from rasterio.merge import merge
+from ._env import path_module
 
 
 def find_overlap(path_out, patch_n, list_of_GUF):
@@ -89,10 +90,11 @@ def merger(overlap_found, path_out, patch_n):
         dest.write(mosaic)
 
 
+# TODO: this function is too heavy; should be modularised into several independent ones.
 def other_tasks(
     path_out,
     patch_n,
-    GUF_data,
+    use_GUF,
     Building_data,
     Road_data,
     building_dir,
@@ -112,7 +114,7 @@ def other_tasks(
     shape_box.crs = {"init": "epsg:4326"}
     shape_box.to_file(path_out + "/shape_box" + str(patch_n))
 
-    if GUF_data:
+    if use_GUF:
         print("Clipping the GUF data . . .")
         overlap_found = find_overlap(path_out, patch_n, list_of_GUF)
 
@@ -198,7 +200,7 @@ def other_tasks(
     predicted_temp.crs = {"init": "epsg:4326"}
     predicted_temp.to_file(path_out + "/predicted_shape" + str(patch_n))
 
-    if GUF_data:
+    if use_GUF:
         print("Merging the GUF data with the predicted . . .")
         time.sleep(3)
         v1_dir = (
@@ -411,7 +413,7 @@ def other_tasks(
 
         gdf["cat"] = road_kind
 
-        with open("./road_width.json") as setting_file:
+        with open(path_module/"road_width.json") as setting_file:
             subset = json.load(setting_file)
 
         buffered = gpd.GeoDataFrame(columns=["geometry", "cat"])
@@ -431,7 +433,7 @@ def other_tasks(
         buffered = buffered.to_crs(epsg=4326)
         buffered.to_file(path_out + "/roads_" + str(patch_n))
 
-    if GUF_data:
+    if use_GUF:
         if Building_data != "no" and Road_data == "no":
             print("Merging the predicted-GUF to Building data . . .")
             time.sleep(3)
@@ -616,10 +618,6 @@ def other_tasks(
                 + Building_data
                 + "_sh_clipped"
                 + str(patch_n)
-                + "/"
-                + Building_data
-                + "_sh_clipped"
-                + str(patch_n)
                 + ".shp"
             )
             out_dir = path_out + "/predict_GUF_roads_" + Building_data + str(patch_n)
@@ -627,9 +625,6 @@ def other_tasks(
 
             predict_GUF_rd_bd = gpd.read_file(
                 path_out
-                + "/predict_GUF_roads_"
-                + Building_data
-                + str(patch_n)
                 + "/predict_GUF_roads_"
                 + Building_data
                 + str(patch_n)
@@ -677,10 +672,6 @@ def other_tasks(
                 + Building_data
                 + "_sh_clipped"
                 + str(patch_n)
-                + "/"
-                + Building_data
-                + "_sh_clipped"
-                + str(patch_n)
                 + ".shp"
             )
             out_dir = path_out + "/predict_" + Building_data + str(patch_n)
@@ -688,9 +679,6 @@ def other_tasks(
 
             predict_bld = gpd.read_file(
                 path_out
-                + "/predict_"
-                + Building_data
-                + str(patch_n)
                 + "/predict_"
                 + Building_data
                 + str(patch_n)

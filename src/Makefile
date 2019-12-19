@@ -1,5 +1,5 @@
 # -*- makefile -*-
-.PHONY: main clean test pip supy
+.PHONY: main clean test pip linder
 
 # OS-specific configurations
 ifeq ($(OS),Windows_NT)
@@ -27,7 +27,7 @@ PYTHON := $(if $(PYTHON_exe),$(PYTHON_exe),python)
 # All the files which include modules used by other modules (these therefore
 # need to be compiled first)
 
-MODULE = luxifer
+MODULE = linder
 
 main:
 	$(MAKE) clean
