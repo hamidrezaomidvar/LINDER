@@ -44,7 +44,7 @@ def grass_overlay(v1_dir, v2_dir, out_dir, patch_n, path_out, how="or"):
     )
 
     raster = rasterio.open(
-        path_out + "/predicted_tiff/patch" + str(patch_n) + "/merged_prediction.tiff"
+        path_out / "predicted_tiff" / f"patch{patch_n}" / "merged_prediction.tiff"
     )
     df = raster.bounds
 

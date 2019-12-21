@@ -3,6 +3,8 @@ from shapely.geometry import Polygon
 import numpy as np
 import pandas as pd
 from .grass_util import grass_overlay
+from .task_util import merge_vector_data
+from pathlib import Path
 
 
 def calculate_fraction(path_out, patch_n, xn, yn):
@@ -35,18 +37,25 @@ def calculate_fraction(path_out, patch_n, xn, yn):
     grid["grid_num"] = grid.index
     grid["grid_area"] = grid.area
     grid.to_file(path_out + "/grid" + str(patch_n))
-    v1_dir = (
-        path_out
-        + "/predict_GUF_roads_mod"
-        + str(patch_n)
-        + "/predict_GUF_roads_mod"
-        + str(patch_n)
-        + ".shp"
-    )
-    v2_dir = path_out + "/grid" + str(patch_n) + "/grid" + str(patch_n) + ".shp"
-    out_dir = path_out + "/grid_intersect" + str(patch_n)
-    grass_overlay(v1_dir, v2_dir, out_dir, patch_n, path_out, how="and")
-    grid_intersect = gpd.read_file(out_dir)
+    # key names
+    name_v1 = f"predict_GUF_roads_mod{patch_n}"
+    name_v2 = f"grid{patch_n}"
+    name_out = f"grid_intersect{patch_n}"
+    grid_intersect = merge_vector_data(path_out, patch_n, name_v1, name_v2, name_out,)
+    path_fn_v1 = Path(f"{name_v1}.shp")
+    path_dir_v1 = Path(path_out) / path_fn_v1.stem
+    # v1_dir = (
+    #     path_out
+    #     + "/predict_GUF_roads_mod"
+    #     + str(patch_n)
+    #     + "/predict_GUF_roads_mod"
+    #     + str(patch_n)
+    #     + ".shp"
+    # )
+    # v2_dir = path_out + "/grid" + str(patch_n) + "/grid" + str(patch_n) + ".shp"
+    # out_dir = path_out + "/grid_intersect" + str(patch_n)
+    # grass_overlay(v1_dir, v2_dir, out_dir, patch_n, path_out, how="and")
+    # grid_intersect = gpd.read_file(out_dir)
     grid_intersect = grid_intersect.drop(["cat", "a_cat", "b_cat"], axis=1)
     grid_intersect["area"] = grid_intersect.area
 
@@ -55,7 +64,7 @@ def calculate_fraction(path_out, patch_n, xn, yn):
     temp["percentage"] = temp.area / temp.b_grid_are
     temp = temp.reset_index()
 
-    list_LC = gpd.read_file(v1_dir).LC.unique()
+    list_LC = gpd.read_file(path_dir_v1).LC.unique()
     centroids = grid.centroid
     fraction = pd.DataFrame(
         columns=np.concatenate((["lat", "lon"], list_LC)), index=centroids.index

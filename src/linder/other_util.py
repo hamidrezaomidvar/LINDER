@@ -29,20 +29,17 @@ from .sent_util import (
 
 def check_sentinel_cfg():
     dict_sc = config.SHConfig().get_config_dict()
-    str_id=dict_sc["instance_id"]
+    str_id = dict_sc["instance_id"]
     if str_id:
         # print(f"instance_id `{str_id}` is found.")
         pass
     else:
-        raise RuntimeError(
-            "\n".join(
-                [
-                    "sentinelhub has NOT been set up with a valid `instance_id`:",
-                    "please set it up following",
-                    "https://eo-learn.readthedocs.io/en/latest/examples/land-cover-map/SI_LULC_pipeline.html#Requirements.",
-                ]
-            )
-        )
+        list_str_info = [
+            "sentinelhub has NOT been set up with a valid `instance_id`:",
+            "please set it up following",
+            "https://eo-learn.readthedocs.io/en/latest/examples/land-cover-map/SI_LULC_pipeline.html#Requirements.",
+        ]
+        raise RuntimeError("\n".join(list_str_info))
 
 
 def download_data(
