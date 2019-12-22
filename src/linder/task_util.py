@@ -1,25 +1,28 @@
+import ast
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+import fiona
+import geopandas as gpd
+import numpy as np
+import osmnx as ox
 import rasterio
 import rasterio.mask
-from shapely.geometry import box
-import geopandas as gpd
-import fiona
+from eolearn.core import EOPatch
 from rasterio.features import shapes
-import time
-import numpy as np
-import os
+from rasterio.merge import merge
+from shapely.geometry import box
+
+from ._env import path_module
 from .clip_util import clip_shp
 from .grass_util import grass_overlay
-import json
-import osmnx as ox
-from pathlib import Path
-import ast
-import sys
-from rasterio.merge import merge
-from ._env import path_module
 
 
-def find_overlap(path_out, patch_n, list_of_GUF):
-    path_shp = Path(f"shape_box{patch_n}.shp")
+def find_overlap(path_out, patch_n, pic_n, list_of_GUF):
+    path_shp = Path(f"shape_box{patch_n}-{pic_n}.shp")
     with fiona.open(path_out / path_shp.stem / path_shp, "r",) as shapefile:
         features = [feature["geometry"] for feature in shapefile]
 
@@ -42,7 +45,7 @@ def find_overlap(path_out, patch_n, list_of_GUF):
             )
 
             with rasterio.open(
-                path_out / f"masked_footprint{patch_n}{overlap_found}.tif",
+                path_out / f"masked_footprint{patch_n}-{pic_n}{overlap_found}.tif",
                 "w",
                 **out_meta,
             ) as dest:
@@ -53,12 +56,10 @@ def find_overlap(path_out, patch_n, list_of_GUF):
     return overlap_found
 
 
-def merger(overlap_found, path_out, patch_n):
+def merger(overlap_found, path_out, patch_n, pic_n):
     all_files = []
     for i in range(1, overlap_found + 1):
-        all_files.append(
-            path_out / f"masked_footprint{patch_n}{i}.tif"
-        )
+        all_files.append(path_out / f"masked_footprint{patch_n}-{pic_n}{i}.tif")
 
     src_files_to_mosaic = []
     for fp in all_files:
@@ -77,7 +78,7 @@ def merger(overlap_found, path_out, patch_n):
         }
     )
 
-    out_fp = path_out / f"masked_footprint{patch_n}.tif"
+    out_fp = path_out / f"masked_footprint{patch_n}-{pic_n}.tif"
 
     with rasterio.open(out_fp, "w", **out_meta) as dest:
         dest.write(mosaic)
@@ -99,35 +100,80 @@ def other_tasks(
 ):
     # cast to Path
     path_out = Path(path_out)
-    print("Getting the boundaries of the image. . .")
-    raster = rasterio.open(
-        path_out / "predicted_tiff" / f"patch{patch_n}" / "merged_prediction.tiff"
-    )
-    df = raster.bounds
-    sh_box = box(df.left, df.bottom, df.right, df.top)
-    shape_box = gpd.GeoDataFrame({"geometry": sh_box, "col": [np.nan]})
-    shape_box.crs = {"init": "epsg:4326"}
-    shape_box.to_file(path_out / f"shape_box{patch_n}")
 
-    if use_GUF:
-        print("Clipping the GUF data . . .")
-        overlap_found = find_overlap(path_out, patch_n, list_of_GUF)
+    # get number of pictures
+    eopatch = EOPatch.load(path_out / f"eopatch_{patch_n}", lazy_loading=True)
+    n_pics = eopatch.data["BANDS"].shape[0]
 
-        if overlap_found == 0:
-            print("Overlap is not found . . .")
-            sys.exit()
-        elif overlap_found == 1:
-            print("Overlap is found. Clipping the data..")
-            path_fn1 = path_out / f"masked_footprint{patch_n}{overlap_found}.tif"
-            path_fn2 = path_out / f"masked_footprint{patch_n}.tif"
-            os.rename(path_fn1, path_fn2)
-        else:
-            print("more than one overlap is found . . .")
-            merger(overlap_found, path_out, patch_n)
+    for pic_n in range(n_pics):
+        print("Getting the boundaries of the image. . .")
+        path_raster = (
+            path_out
+            / "predicted_tiff"
+            / f"patch{patch_n}"
+            / f"picture{pic_n}"
+            / "merged_prediction.tiff"
+        )
+        raster = rasterio.open(path_raster)
+        df = raster.bounds
+        sh_box = box(df.left, df.bottom, df.right, df.top)
+        shape_box = gpd.GeoDataFrame({"geometry": sh_box, "col": [np.nan]})
+        shape_box.crs = {"init": "epsg:4326"}
+        shape_box.to_file(path_out / f"shape_box{patch_n}-{pic_n}")
+
+        if use_GUF:
+            print("Clipping the GUF data . . .")
+            overlap_found = find_overlap(path_out, patch_n, pic_n, list_of_GUF)
+
+            if overlap_found == 0:
+                print("Overlap is not found . . .")
+                sys.exit()
+            elif overlap_found == 1:
+                print("Overlap is found. Clipping the data..")
+                path_fn1 = (
+                    path_out / f"masked_footprint{patch_n}-{pic_n}{overlap_found}.tif"
+                )
+                path_fn2 = path_out / f"masked_footprint{patch_n}-{pic_n}.tif"
+                os.rename(path_fn1, path_fn2)
+            else:
+                print("more than one overlap is found . . .")
+                merger(overlap_found, path_out, patch_n, pic_n)
+
+            mask = None
+            with rasterio.Env():
+                with rasterio.open(
+                    path_out / f"masked_footprint{patch_n}-{pic_n}.tif"
+                ) as src:
+                    image = src.read(1)  # first band
+                    results = (
+                        {"properties": {"raster_val": v}, "geometry": s}
+                        for i, (s, v) in enumerate(
+                            shapes(image, mask=mask, transform=src.transform)
+                        )
+                    )
+            geoms_foot = list(results)
+            urban_foot = gpd.GeoDataFrame.from_features(geoms_foot)
+
+            path_shp = Path(f"shape_box{patch_n}-{pic_n}.shp")
+            box_domain = gpd.read_file(path_out / path_shp.stem / path_shp)
+            try:
+                urban_foot = clip_shp(urban_foot, box_domain)
+            except:
+                print("Some exception happened when clipping urban_foot and box_domain")
+            urban_foot = urban_foot.rename(columns={"raster_val": "GUF"})
+            urban_foot = urban_foot[urban_foot.GUF != 128]
+
+            urban_foot_temp = urban_foot.buffer(0)
+            urban_foot_temp = gpd.GeoDataFrame(urban_foot_temp)
+            urban_foot_temp["GUF"] = urban_foot["GUF"]
+            urban_foot_temp = urban_foot_temp.rename(columns={0: "geometry"})
+            urban_foot_temp.crs = {"init": "epsg:4326"}
+            urban_foot_temp.to_file(path_out / f"urban_foot_shape{patch_n}-{pic_n}")
 
         mask = None
+        print("Converting the predicted tiff file to shapefile . . .")
         with rasterio.Env():
-            with rasterio.open(path_out / f"masked_footprint{patch_n}.tif") as src:
+            with rasterio.open(path_raster) as src:
                 image = src.read(1)  # first band
                 results = (
                     {"properties": {"raster_val": v}, "geometry": s}
@@ -135,83 +181,259 @@ def other_tasks(
                         shapes(image, mask=mask, transform=src.transform)
                     )
                 )
-        geoms_foot = list(results)
-        urban_foot = gpd.GeoDataFrame.from_features(geoms_foot)
+        geoms_predict = list(results)
+        predicted = gpd.GeoDataFrame.from_features(geoms_predict)
 
-        path_shp = Path(f"shape_box{patch_n}.shp")
-        box_domain = gpd.read_file(path_out / path_shp.stem / path_shp)
-        try:
-            urban_foot = clip_shp(urban_foot, box_domain)
-        except:
-            print("Some exception happened when clipping urban_foot and box_domain")
-        urban_foot = urban_foot.rename(columns={"raster_val": "GUF"})
-        urban_foot = urban_foot[urban_foot.GUF != 128]
+        predicted = predicted.rename(columns={"raster_val": "predicted"})
+        predicted_temp = predicted.buffer(0)
+        predicted_temp = gpd.GeoDataFrame(predicted_temp)
+        predicted_temp["predicted"] = predicted["predicted"]
+        predicted_temp = predicted_temp.rename(columns={0: "geometry"})
+        predicted_temp.crs = {"init": "epsg:4326"}
+        predicted_temp.to_file(path_out / f"predicted_shape{patch_n}-{pic_n}")
 
-        urban_foot_temp = urban_foot.buffer(0)
-        urban_foot_temp = gpd.GeoDataFrame(urban_foot_temp)
-        urban_foot_temp["GUF"] = urban_foot["GUF"]
-        urban_foot_temp = urban_foot_temp.rename(columns={0: "geometry"})
-        urban_foot_temp.crs = {"init": "epsg:4326"}
-        urban_foot_temp.to_file(path_out / f"urban_foot_shape{patch_n}")
+        if use_GUF:
+            print("Merging the GUF data with the predicted . . .")
+            time.sleep(3)
+            # key names
+            name_v1 = f"predicted_shape{patch_n}-{pic_n}"
+            name_v2 = f"urban_foot_shape{patch_n}-{pic_n}"
+            name_out = f"predict_GUF{patch_n}-{pic_n}"
 
-    mask = None
-    print("Converting the predicted tiff file to shapefile . . .")
-    with rasterio.Env():
-        with rasterio.open(
-            path_out / "predicted_tiff" / f"patch{patch_n}" / f"merged_prediction.tiff"
-        ) as src:
-            image = src.read(1)  # first band
-            results = (
-                {"properties": {"raster_val": v}, "geometry": s}
-                for i, (s, v) in enumerate(
-                    shapes(image, mask=mask, transform=src.transform)
-                )
+            predict_GUF = merge_vector_data(
+                path_out, path_raster, name_v1, name_v2, name_out,
             )
-    geoms_predict = list(results)
-    predicted = gpd.GeoDataFrame.from_features(geoms_predict)
 
-    predicted = predicted.rename(columns={"raster_val": "predicted"})
-    predicted_temp = predicted.buffer(0)
-    predicted_temp = gpd.GeoDataFrame(predicted_temp)
-    predicted_temp["predicted"] = predicted["predicted"]
-    predicted_temp = predicted_temp.rename(columns={0: "geometry"})
-    predicted_temp.crs = {"init": "epsg:4326"}
-    predicted_temp.to_file(path_out / f"predicted_shape{patch_n}")
+            predict_GUF = predict_GUF[~np.isnan(predict_GUF.a_predicte)]
+            predict_GUF["LC"] = predict_GUF.a_predicte
+            a = predict_GUF[
+                (predict_GUF.b_GUF == 255)
+                & (predict_GUF.a_predicte != 1)
+                & (predict_GUF.a_predicte != 2)
+            ]
+            predict_GUF.loc[a.index, "LC"] = 0
+            b = predict_GUF[
+                (~np.isnan(predict_GUF.b_GUF))
+                & (predict_GUF.b_GUF != 255)
+                & (predict_GUF.a_predicte == 0)
+            ]
+            predict_GUF.loc[b.index, "LC"] = 3
+            predict_GUF = predict_GUF.drop(
+                ["a_cat", "b_GUF", "b_cat", "a_predicte", "cat"], axis=1
+            )
+            predict_GUF_temp = predict_GUF.buffer(0)
+            predict_GUF_temp = gpd.GeoDataFrame(predict_GUF_temp)
+            predict_GUF_temp["LC"] = predict_GUF["LC"]
+            predict_GUF_temp = predict_GUF_temp.rename(columns={0: "geometry"})
+            predict_GUF_temp.crs = {"init": "epsg:4326"}
+            predict_GUF_temp.to_file(path_out / f"predict_GUF_mod{patch_n}-{pic_n}")
 
-    if use_GUF:
-        print("Merging the GUF data with the predicted . . .")
-        time.sleep(3)
-        # key names
-        name_v1 = f"predicted_shape{patch_n}"
-        name_v2 = f"urban_foot_shape{patch_n}"
-        name_out = f"predict_GUF{patch_n}"
+        # if Building_data != "no":
+        if Building_data == "OSM":
+            xtile_min, xtile_max, ytile_min, ytile_max, zoom = cal_prm_tile(
+                lon_left_top, lat_right_bot, lon_right_bot, lat_left_top
+            )
+            path_OSM = download_OSM(
+                path_out, patch_n, xtile_min, xtile_max, ytile_min, ytile_max, zoom,
+            )
 
-        predict_GUF = merge_vector_data(path_out, patch_n, name_v1, name_v2, name_out,)
+            print("Attaching the OSM data together . . .")
+            counter = 0
+            for i in range(xtile_min, xtile_max + 1):
+                for j in range(ytile_min, ytile_max + 1):
+                    try:
+                        b = gpd.read_file(path_OSM / f"buildings{i}-{j}.geojson")
+                        b = b.buffer(0)
 
-        predict_GUF = predict_GUF[~np.isnan(predict_GUF.a_predicte)]
-        predict_GUF["LC"] = predict_GUF.a_predicte
-        a = predict_GUF[
-            (predict_GUF.b_GUF == 255)
-            & (predict_GUF.a_predicte != 1)
-            & (predict_GUF.a_predicte != 2)
-        ]
-        predict_GUF.loc[a.index, "LC"] = 0
-        b = predict_GUF[
-            (~np.isnan(predict_GUF.b_GUF))
-            & (predict_GUF.b_GUF != 255)
-            & (predict_GUF.a_predicte == 0)
-        ]
-        predict_GUF.loc[b.index, "LC"] = 3
-        predict_GUF = predict_GUF.drop(
-            ["a_cat", "b_GUF", "b_cat", "a_predicte", "cat"], axis=1
-        )
-        predict_GUF_temp = predict_GUF.buffer(0)
-        predict_GUF_temp = gpd.GeoDataFrame(predict_GUF_temp)
-        predict_GUF_temp["LC"] = predict_GUF["LC"]
-        predict_GUF_temp = predict_GUF_temp.rename(columns={0: "geometry"})
-        predict_GUF_temp.crs = {"init": "epsg:4326"}
-        predict_GUF_temp.to_file(path_out / f"predict_GUF_mod{patch_n}")
+                        if counter == 0:
+                            a = b
 
+                        if counter != 0:
+                            a = a.union(b)
+                        counter = 1
+                    except:
+                        pass
+
+            path_OSM_sh = path_OSM.stem + "_sh"
+            if not os.path.isdir(path_OSM_sh):
+                os.makedirs(path_OSM_sh)
+
+            a.to_file(path_OSM_sh)
+
+        path_shp = Path(f"shape_box{patch_n}-{pic_n}.shp")
+        box_domain = gpd.read_file(path_out / path_shp.stem / path_shp)
+
+        if Building_data != "no":
+            if Building_data == "OSM":
+                path_shp = Path(f"OSM{patch_n}-{pic_n}_sh.shp")
+                buildings = gpd.read_file(path_out / path_shp.stem / path_shp)
+            elif Building_data == "MICROSOFT":
+                print("Reading the Microsoft building data . . .")
+                buildings = gpd.read_file(building_dir)
+
+            print("Clipping the building data to the selected domain")
+            buildings_clipped = clip_shp(buildings, box_domain)
+            buildings_clipped = buildings_clipped.buffer(0)
+            buildings_clipped = gpd.GeoDataFrame(buildings_clipped)
+            buildings_clipped["build"] = 1
+            buildings_clipped = buildings_clipped.rename(columns={0: "geometry"})
+            buildings_clipped.crs = {"init": "epsg:4326"}
+
+            path_fn = path_out / f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
+            print(f"Writing clipped data into {path_fn.as_posix()}")
+            buildings_clipped.to_file(path_fn)
+
+        if Road_data != "no":
+            download_OSM_road(
+                lat_left_top,
+                lat_right_bot,
+                lon_right_bot,
+                lon_left_top,
+                path_out,
+                patch_n,
+                pic_n
+            )
+
+        if use_GUF:
+            if Building_data != "no" and Road_data == "no":
+                print("Merging the predicted-GUF to Building data . . .")
+                # key names
+                name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
+                name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
+                name_out = f"predict_GUF_{Building_data}{patch_n}-{pic_n}"
+
+                predict_GUF_bld = merge_vector_data(
+                    path_out, path_raster, name_v1, name_v2, name_out,
+                )
+
+                var_use = "a_LC"
+                list_rule = [
+                    ("b_build", 1, 4),
+                ]
+                list_var_drop = ["a_cat", "b_cat", "a_LC", "b_build"]
+                str_fn_out = f"predict_GUF_{Building_data}_mod{patch_n}-{pic_n}"
+
+                predict_feature(
+                    predict_GUF_bld,
+                    var_use,
+                    list_rule,
+                    list_var_drop,
+                    path_out,
+                    str_fn_out,
+                )
+
+            elif Road_data != "no" and Building_data == "no":
+                print("Merging the predicted-GUF to Road data . . .")
+                # key names
+                name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
+                name_v2 = f"roads_{patch_n}-{pic_n}"
+                name_out = f"predict_GUF_roads_{patch_n}-{pic_n}"
+
+                predict_GUF_rd = merge_vector_data(
+                    path_out, path_raster, name_v1, name_v2, name_out,
+                )
+
+                var_use = "a_LC"
+                list_rule = [
+                    ("b_cat", 1, 5),
+                    ("LC", 0, 4),
+                    ("LC", 5, 0),
+                ]
+                list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_FID"]
+                str_fn_out = f"predict_GUF_roads_mod{patch_n}-{pic_n}"
+
+                predict_feature(
+                    predict_GUF_rd,
+                    var_use,
+                    list_rule,
+                    list_var_drop,
+                    path_out,
+                    str_fn_out,
+                )
+
+            elif Road_data != "no" and Building_data != "no":
+                print(
+                    "Both Building and Road: Merging the predicted-GUF to Road data . . ."
+                )
+                # key names
+                name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
+                name_v2 = f"roads_{patch_n}-{pic_n}"
+                name_out = f"predict_GUF_roads_{patch_n}-{pic_n}"
+
+                predict_GUF_rd = merge_vector_data(
+                    path_out, path_raster, name_v1, name_v2, name_out,
+                )
+
+                var_use = "a_LC"
+                list_rule = [
+                    ("b_cat", 1, 5),
+                    ("LC", 0, 4),
+                    ("LC", 5, 0),
+                ]
+                list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_FID"]
+                str_fn_out = f"predict_GUF_roads_mod{patch_n}-{pic_n}"
+
+                predict_feature(
+                    predict_GUF_rd,
+                    var_use,
+                    list_rule,
+                    list_var_drop,
+                    path_out,
+                    str_fn_out,
+                )
+
+                print("Merging the predicted-GUF-roads to Building data . . .")
+
+                # key names
+                name_v1 = f"predict_GUF_roads_mod{patch_n}-{pic_n}"
+                name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
+                name_out = f"predict_GUF_roads_{Building_data}{patch_n}-{pic_n}"
+
+                predict_GUF_rd_bd = merge_vector_data(
+                    path_out, path_raster, name_v1, name_v2, name_out,
+                )
+
+                var_use = "a_LC"
+                list_rule = [
+                    ("a_LC", 4, 5),
+                    ("b_build", 1, 4),
+                ]
+                list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_build"]
+                str_fn_out = f"predict_GUF_roads_{Building_data}_mod{patch_n}-{pic_n}"
+
+                predict_feature(
+                    predict_GUF_rd_bd,
+                    var_use,
+                    list_rule,
+                    list_var_drop,
+                    path_out,
+                    str_fn_out,
+                )
+
+        else:
+            if Building_data != "no" and Road_data == "no":
+                print("Merging the predicted to Building data . . .")
+                # key names
+                name_v1 = f"predicted_shape{patch_n}-{pic_n}"
+                name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
+                name_out = f"predict_{Building_data}{patch_n}-{pic_n}"
+                predict_bld = merge_vector_data(
+                    path_out, path_raster, name_v1, name_v2, name_out,
+                )
+
+                var_use = "a_predicte"
+                list_rule = [
+                    ("b_build", 1, 3),
+                ]
+                list_var_drop = ["a_cat", "b_cat", "a_predicte", "b_build"]
+                str_fn_out = f"predict_{Building_data}_mod{patch_n}-{pic_n}"
+
+                predict_feature(
+                    predict_bld, var_use, list_rule, list_var_drop, path_out, str_fn_out
+                )
+
+
+def cal_prm_tile(lon_left_top, lat_right_bot, lon_right_bot, lat_left_top):
     lon_deg_min, lat_deg_min = (lon_left_top, lat_right_bot)
     lon_deg_max, lat_deg_max = (lon_right_bot, lat_left_top)
     lat_rad_min = lat_deg_min * np.pi / 180
@@ -241,186 +463,7 @@ def other_tasks(
     xtile_min = int(np.floor(xtile_min))
     xtile_max = int(np.ceil(xtile_max))
     xtile_min = xtile_min - 3
-
-    if Building_data != "no":
-        if Building_data == "OSM":
-            path_OSM = download_OSM(
-                path_out, patch_n, xtile_min, xtile_max, ytile_min, ytile_max, zoom,
-            )
-
-            print("Attaching the OSM data together . . .")
-            counter = 0
-            for i in range(xtile_min, xtile_max + 1):
-                for j in range(ytile_min, ytile_max + 1):
-                    try:
-                        b = gpd.read_file(path_OSM / f"buildings{i}-{j}.geojson")
-                        b = b.buffer(0)
-
-                        if counter == 0:
-                            a = b
-
-                        if counter != 0:
-                            a = a.union(b)
-                        counter = 1
-                    except:
-                        pass
-
-            path_OSM_sh = path_OSM.stem + "_sh"
-            if not os.path.isdir(path_OSM_sh):
-                os.makedirs(path_OSM_sh)
-
-            a.to_file(path_OSM_sh)
-
-    path_shp = Path(f"shape_box{patch_n}.shp")
-    box_domain = gpd.read_file(path_out / path_shp.stem / path_shp)
-
-    if Building_data != "no":
-        if Building_data == "OSM":
-            path_shp = Path(f"OSM{patch_n}_sh.shp")
-            buildings = gpd.read_file(path_out / path_shp.stem / path_shp)
-        elif Building_data == "MICROSOFT":
-            print("Reading the Microsoft building data . . .")
-            buildings = gpd.read_file(building_dir)
-
-        print("Clipping the building data to the selected domain")
-        buildings_clipped = clip_shp(buildings, box_domain)
-        buildings_clipped = buildings_clipped.buffer(0)
-        buildings_clipped = gpd.GeoDataFrame(buildings_clipped)
-        buildings_clipped["build"] = 1
-        buildings_clipped = buildings_clipped.rename(columns={0: "geometry"})
-        buildings_clipped.crs = {"init": "epsg:4326"}
-
-        path_fn = path_out / f"{Building_data}_sh_clipped{patch_n}"
-        print(f"Writing clipped data into {path_fn.as_posix()}")
-        buildings_clipped.to_file(path_fn)
-
-    if Road_data != "no":
-        download_OSM_road(
-            lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, path_out, patch_n
-        )
-
-    if use_GUF:
-        if Building_data != "no" and Road_data == "no":
-            print("Merging the predicted-GUF to Building data . . .")
-            # key names
-            name_v1 = f"predict_GUF_mod{patch_n}"
-            name_v2 = f"{Building_data}_sh_clipped{patch_n}"
-            name_out = f"predict_GUF_{Building_data}{patch_n}"
-
-            predict_GUF_bld = merge_vector_data(
-                path_out, patch_n, name_v1, name_v2, name_out,
-            )
-
-            var_use = "a_LC"
-            list_rule = [
-                ("b_build", 1, 4),
-            ]
-            list_var_drop = ["a_cat", "b_cat", "a_LC", "b_build"]
-            str_fn_out = f"predict_GUF_{Building_data}_mod{patch_n}"
-
-            predict_feature(
-                predict_GUF_bld, var_use, list_rule, list_var_drop, path_out, str_fn_out
-            )
-
-        elif Road_data != "no" and Building_data == "no":
-            print("Merging the predicted-GUF to Road data . . .")
-            # key names
-            name_v1 = f"predict_GUF_mod{patch_n}"
-            name_v2 = f"roads_{patch_n}"
-            name_out = f"predict_GUF_roads_{patch_n}"
-
-            predict_GUF_rd = merge_vector_data(
-                path_out, patch_n, name_v1, name_v2, name_out,
-            )
-
-            var_use = "a_LC"
-            list_rule = [
-                ("b_cat", 1, 5),
-                ("LC", 0, 4),
-                ("LC", 5, 0),
-            ]
-            list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_FID"]
-            str_fn_out = f"predict_GUF_roads_mod{patch_n}"
-
-            predict_feature(
-                predict_GUF_rd, var_use, list_rule, list_var_drop, path_out, str_fn_out
-            )
-
-        elif Road_data != "no" and Building_data != "no":
-            print(
-                "Both Building and Road: Merging the predicted-GUF to Road data . . ."
-            )
-            # key names
-            name_v1 = f"predict_GUF_mod{patch_n}"
-            name_v2 = f"roads_{patch_n}"
-            name_out = f"predict_GUF_roads_{patch_n}"
-
-            predict_GUF_rd = merge_vector_data(
-                path_out, patch_n, name_v1, name_v2, name_out,
-            )
-
-            var_use = "a_LC"
-            list_rule = [
-                ("b_cat", 1, 5),
-                ("LC", 0, 4),
-                ("LC", 5, 0),
-            ]
-            list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_FID"]
-            str_fn_out = f"predict_GUF_roads_mod{patch_n}"
-
-            predict_feature(
-                predict_GUF_rd, var_use, list_rule, list_var_drop, path_out, str_fn_out
-            )
-
-            print("Merging the predicted-GUF-roads to Building data . . .")
-
-            # key names
-            name_v1 = f"predict_GUF_roads_mod{patch_n}"
-            name_v2 = f"{Building_data}_sh_clipped{patch_n}"
-            name_out = f"predict_GUF_roads_{Building_data}{patch_n}"
-
-            predict_GUF_rd_bd = merge_vector_data(
-                path_out, patch_n, name_v1, name_v2, name_out,
-            )
-
-            var_use = "a_LC"
-            list_rule = [
-                ("a_LC", 4, 5),
-                ("b_build", 1, 4),
-            ]
-            list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_build"]
-            str_fn_out = f"predict_GUF_roads_{Building_data}_mod{patch_n}"
-
-            predict_feature(
-                predict_GUF_rd_bd,
-                var_use,
-                list_rule,
-                list_var_drop,
-                path_out,
-                str_fn_out,
-            )
-
-    else:
-        if Building_data != "no" and Road_data == "no":
-            print("Merging the predicted to Building data . . .")
-            # key names
-            name_v1 = f"predicted_shape{patch_n}"
-            name_v2 = f"{Building_data}_sh_clipped{patch_n}"
-            name_out = f"predict_{Building_data}{patch_n}"
-            predict_bld = merge_vector_data(
-                path_out, patch_n, name_v1, name_v2, name_out,
-            )
-
-            var_use = "a_predicte"
-            list_rule = [
-                ("b_build", 1, 3),
-            ]
-            list_var_drop = ["a_cat", "b_cat", "a_predicte", "b_build"]
-            str_fn_out = f"predict_{Building_data}_mod{patch_n}"
-
-            predict_feature(
-                predict_bld, var_use, list_rule, list_var_drop, path_out, str_fn_out
-            )
+    return xtile_min, xtile_max, ytile_min, ytile_max, zoom
 
 
 def predict_feature(gdf_in, var_use, list_rule, list_var_drop, path_out, str_fn_out):
@@ -456,7 +499,7 @@ def predict_feature(gdf_in, var_use, list_rule, list_var_drop, path_out, str_fn_
 
 
 def download_OSM_road(
-    lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, path_out, patch_n
+    lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, path_out, patch_n,pic_n
 ):
     # cast to `Path`
     path_out_x = Path(path_out)
@@ -493,17 +536,17 @@ def download_OSM_road(
         buffered = buffered.append(temp)
 
     buffered.crs = gdf.crs
-    buffered.to_file(path_out_x / f"roads_all_{patch_n}")
+    buffered.to_file(path_out_x / f"roads_all_{patch_n}-{pic_n}")
 
     buffered.cat = "5"
     print("Dissolving roads . . .")
     buffered = buffered.dissolve(by="cat")
     buffered = buffered.to_crs(epsg=4326)
-    buffered.to_file(path_out_x / f"roads_{patch_n}")
+    buffered.to_file(path_out_x / f"roads_{patch_n}-{pic_n}")
 
 
 def merge_vector_data(
-    path_out: Path, patch_n: int, name_v1: str, name_v2: str, name_out: str,
+    path_out: Path, path_raster: Path, name_v1: str, name_v2: str, name_out: str,
 ):
     # TODO: why do we need this sleep?
     time.sleep(3)
@@ -521,10 +564,10 @@ def merge_vector_data(
     path_dir_out = path_out_x / path_fn_out.stem
 
     # overlay results
-    grass_overlay(path_dir_v1, path_dir_v2, path_dir_out, patch_n, path_out_x)
+    grass_overlay(path_dir_v1, path_dir_v2, path_dir_out, path_raster)
 
     # load geoDF as returned object for later processing
-    gdf_merge = gpd.read_file(path_out_x / path_fn_out.stem / path_fn_out)
+    gdf_merge = gpd.read_file(path_dir_out / path_fn_out)
 
     return gdf_merge
 

@@ -10,12 +10,12 @@ gisbase = "/Applications/GRASS-7.6.app/Contents/Resources"
 os.environ["GISBASE"] = gisbase
 grass_pydir = os.path.join(gisbase, "etc", "python")
 sys.path.append(grass_pydir)
-os.environ["LD_LIBRARY_PATH"] = os.path.join(gisbase,"lib")
+os.environ["LD_LIBRARY_PATH"] = os.path.join(gisbase, "lib")
 import grass.script as gscript
 import grass.script.setup as gsetup
 
 
-def grass_overlay(v1_dir, v2_dir, out_dir, patch_n, path_out, how="or"):
+def grass_overlay(v1_dir, v2_dir, out_dir, path_raster, how="or"):
     # TODO: check if gisdb/nc_spm_08 folders exist?
     gsetup.init(gisbase, gisdb, location, mapset)
 
@@ -43,9 +43,10 @@ def grass_overlay(v1_dir, v2_dir, out_dir, patch_n, path_out, how="or"):
         flags="o",
     )
 
-    raster = rasterio.open(
-        path_out / "predicted_tiff" / f"patch{patch_n}" / "merged_prediction.tiff"
-    )
+    # path_raster = (
+    #     path_out / "predicted_tiff" / f"patch{patch_n}"/ f"picture{pic_n}" / "merged_prediction.tiff"
+    # )
+    raster = rasterio.open(path_raster)
     df = raster.bounds
 
     gscript.run_command("g.region", n=df.top, s=df.bottom, e=df.right, w=df.left)

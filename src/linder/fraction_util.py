@@ -2,15 +2,16 @@ import geopandas as gpd
 from shapely.geometry import Polygon
 import numpy as np
 import pandas as pd
-from .grass_util import grass_overlay
+# from .grass_util import grass_overlay
 from .task_util import merge_vector_data
 from pathlib import Path
 
 
 def calculate_fraction(path_out, patch_n, xn, yn):
     print("calculating the land cover fraction . . .")
+    path_shp = path_out + "/shape_box" + str(patch_n) + "/shape_box" + str(patch_n) + ".shp"
     box = gpd.read_file(
-        path_out + "/shape_box" + str(patch_n) + "/shape_box" + str(patch_n) + ".shp"
+        path_shp
     )
     xmin, ymin, xmax, ymax = box.total_bounds
     cols = list(np.linspace(xmin, xmax, xn, endpoint=True))

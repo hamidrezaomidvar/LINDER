@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .fraction_util import calculate_fraction
 from .other_util import download_data, save_images
-from .predict_util import predict_image
+from .predict_util import predict_image_one,predict_image_all
 from .task_util import other_tasks
 
 
@@ -35,9 +35,10 @@ def get_land_cover(
 
     # path_GUF = settings[cname]["GUF_data"] == "yes"
 
-    # use `OSM` to force download OSM data in `other_tasks`
+    # use `no` to force skip building merging
     Building_data = "no"
-    # Road_data = settings[cname]["road_data"]
+
+    # use `OSM` to force download OSM data in `other_tasks`
     Road_data = "OSM"
     # if Building_data == "MICROSOFT":
     #     path_data_building = settings[cname]["building_dir"]
@@ -83,7 +84,8 @@ def get_land_cover(
             # save_images(path_save, patch_n, scale)
 
             # # index land cover by prediction
-            # predict_image(path_save, patch_n, scale)
+            # # predict_image_one(path_save, patch_n, scale)
+            # predict_image_all(path_save, patch_n, scale)
 
             # other tasks
             other_tasks(

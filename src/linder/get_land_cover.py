@@ -5,7 +5,7 @@ from glob import glob
 import numpy as np
 from task_util import other_tasks
 from other_util import download_data, save_images
-from predict_util import predict_image
+from predict_util import predict_image_one
 from fraction_util import calculate_fraction
 
 # cname = "London"
@@ -72,7 +72,7 @@ for i in range(0, len(all_lons) - 1):
                 downloading_img,
             )
             save_images(path_out, patch_n, scale)
-            predict_image(path_out, patch_n, scale)
+            predict_image_one(path_out, patch_n, scale)
             other_tasks(
                 path_out,
                 patch_n,
