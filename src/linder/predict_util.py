@@ -122,11 +122,11 @@ def predict_image_one(path_out, patch_n, scale):
         if os.path.exists(PATH / "merged_prediction.tiff"):
             os.remove(PATH / "merged_prediction.tiff")
         cmd = (
-            "gdal_merge.py -o "
-            + str(PATH)
-            + "/merged_prediction.tiff -co compress=LZW "
-            + str(PATH)
-            + "/prediction_eopatch_*"
+                "gdal_merge.py -o "
+                + str(PATH)
+                + "/merged_prediction.tiff -co compress=LZW "
+                + str(PATH)
+                + "/prediction_eopatch_*"
         )
         os.system(cmd)
 
@@ -189,6 +189,7 @@ def predict_image_all(path_out, patch_n, scale):
     # while cnt == "n":
 
     # pic_n = int(input("Please choose the desired image number: "))
+    list_path_raster = []
     for pic_n in range(n_pics):
         # TASK TO LOAD EXISTING EOPATCHES
         load = LoadFromDisk(path_out)
@@ -249,7 +250,7 @@ def predict_image_all(path_out, patch_n, scale):
         # TASK TO EXPORT TIFF
         export_tiff = ExportToTiff((FeatureType.MASK_TIMELESS, "LBL"))
         tiff_location = (
-            path_out / f"predicted_tiff" / f"patch{patch_n}" / f"picture{pic_n}"
+                path_out / f"predicted_tiff" / f"patch-{patch_n}" / f"picture-{pic_n}"
         )
 
         if not os.path.isdir(tiff_location):
@@ -280,16 +281,19 @@ def predict_image_all(path_out, patch_n, scale):
         executor.make_report()
 
         # PATH = path_out / "predicted_tiff" / f"patch{patch_n}"
-        if os.path.exists(tiff_location / "merged_prediction.tiff"):
-            os.remove(tiff_location / "merged_prediction.tiff")
+        path_raster = tiff_location / "merged_prediction.tiff"
+        if os.path.exists(path_raster):
+            os.remove(path_raster)
         cmd = (
-            "gdal_merge.py -o "
-            + str(tiff_location)
-            + "/merged_prediction.tiff -co compress=LZW "
-            + str(tiff_location)
-            + "/prediction_eopatch_*"
+                "gdal_merge.py -o "
+                + str(tiff_location)
+                + "/merged_prediction.tiff -co compress=LZW "
+                + str(tiff_location)
+                + "/prediction_eopatch_*"
         )
         os.system(cmd)
+        # save path
+        list_path_raster.append(path_raster)
 
         # Reference colormap things
         lulc_cmap = mpl.colors.ListedColormap([entry.color for entry in LULC])
@@ -323,6 +327,8 @@ def predict_image_all(path_out, patch_n, scale):
 
         print("saving the predicted image . . .")
         plt.savefig(path_out / f"predicted_vs_real_{patch_n}-{pic_n}.png")
+
+    return list_path_raster
 
     # cnt = input(
     #     "Is the first stage predicted image good for patch "

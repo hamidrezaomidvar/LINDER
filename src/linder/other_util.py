@@ -157,8 +157,8 @@ def save_images(path_out, patch_n, scale):
     if not os.path.isdir(image_dir):
         os.makedirs(image_dir)
 
-    print(f"saving the images into {image_dir} . . .")
-    # n_pics = eopatch.data["BANDS"].shape[0]
+    print(f"saving the images into {image_dir} ...")
+
     list_timestamp = eopatch.timestamp
     for i, timestamp in enumerate(list_timestamp):
         str_ts = timestamp.isoformat()
