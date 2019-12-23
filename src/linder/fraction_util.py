@@ -2,17 +2,22 @@ import geopandas as gpd
 from shapely.geometry import Polygon
 import numpy as np
 import pandas as pd
+
 # from .grass_util import grass_overlay
 from .task_util import merge_vector_data
 from pathlib import Path
 
 
-def calculate_fraction(path_out, patch_n, xn, yn):
-    print("calculating the land cover fraction . . .")
-    path_shp = path_out + "/shape_box" + str(patch_n) + "/shape_box" + str(patch_n) + ".shp"
-    box = gpd.read_file(
-        path_shp
-    )
+def calculate_fraction(path_out, path_shp, path_raster, patch_n, xn, yn):
+    # cast to Path
+    path_out = Path(path_out)
+
+    # retrieve name for this job from `path_shp`
+    name_job = path_shp.stem[-3:]
+
+    print(f"calculating the land cover fraction for patch-image {name_job} ...")
+    # path_shp = path_out + "/shape_box" + str(patch_n) + "/shape_box" + str(patch_n) + ".shp"
+    box = gpd.read_file(path_shp)
     xmin, ymin, xmax, ymax = box.total_bounds
     cols = list(np.linspace(xmin, xmax, xn, endpoint=True))
     rows = list(np.linspace(ymin, ymax, yn, endpoint=True))
@@ -37,12 +42,14 @@ def calculate_fraction(path_out, patch_n, xn, yn):
     grid.crs = box.crs
     grid["grid_num"] = grid.index
     grid["grid_area"] = grid.area
-    grid.to_file(path_out + "/grid" + str(patch_n))
+    grid.to_file(path_out / f"grid{name_job}")
     # key names
-    name_v1 = f"predict_GUF_roads_mod{patch_n}"
-    name_v2 = f"grid{patch_n}"
-    name_out = f"grid_intersect{patch_n}"
-    grid_intersect = merge_vector_data(path_out, patch_n, name_v1, name_v2, name_out,)
+    name_v1 = f"predict_GUF_roads_mod{name_job}"
+    name_v2 = f"grid{name_job}"
+    name_out = f"grid_intersect{name_job}"
+    grid_intersect = merge_vector_data(
+        path_out, path_raster, name_v1, name_v2, name_out,
+    )
     path_fn_v1 = Path(f"{name_v1}.shp")
     path_dir_v1 = Path(path_out) / path_fn_v1.stem
     # v1_dir = (
@@ -88,4 +95,8 @@ def calculate_fraction(path_out, patch_n, xn, yn):
         a_list = aa.T.tolist()
         fraction.loc[i] = [centroids.loc[i].y, centroids.loc[i].x] + a_list
 
-    fraction.to_csv(path_out + "/fraction" + str(patch_n) + ".csv")
+    path_fraction = path_out / f"fraction{name_job}.csv"
+
+    fraction.to_csv(path_fraction)
+
+    return path_fraction

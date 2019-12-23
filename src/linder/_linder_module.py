@@ -83,9 +83,9 @@ def get_land_cover(
             # # save images as local files
             # save_images(path_save, patch_n, scale)
 
-            # # index land cover by prediction
-            # # predict_image_one(path_save, patch_n, scale)
-            # predict_image_all(path_save, patch_n, scale)
+            # index land cover by prediction
+            # predict_image_one(path_save, patch_n, scale)
+            predict_image_all(path_save, patch_n, scale)
 
             # other tasks
             other_tasks(
@@ -101,6 +101,9 @@ def get_land_cover(
                 lat_right_bot,
                 lon_right_bot,
             )
-
-            calculate_fraction(path_save, patch_n, xn, yn)
+            list_path_shp=sorted(list(Path(path_save).glob('shape_box*/*shp')))
+            list_path_raster=sorted(list(Path(path_save).glob('predicted_tiff/patch*/picture*/merged_prediction.tiff')))
+            # print(list_path_shp)
+            for path_shp,path_raster in zip(list_path_shp,list_path_raster):
+                path_fraction = calculate_fraction(path_save, path_shp, path_raster, patch_n, xn, yn)
             patch_n = patch_n + 1
