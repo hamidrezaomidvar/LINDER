@@ -75,5 +75,6 @@ def grass_overlay(v1_dir, v2_dir, out_dir, path_raster, how="or"):
 
     temp = gpd.read_file(out_file)
     os.remove(out_file)
+    # temp.crs = {"init": "epsg:4326"}
     temp.crs = {"init": "epsg:4326"}
     temp.to_file(out_dir)

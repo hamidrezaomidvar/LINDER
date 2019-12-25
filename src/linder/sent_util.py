@@ -60,8 +60,10 @@ class NormalizedDifferenceIndex(EOTask):
     def execute(self, eopatch):
         band_a = eopatch.data[self.band_a_fetaure_name][..., self.band_a_fetaure_idx]
         band_b = eopatch.data[self.band_b_fetaure_name][..., self.band_b_fetaure_idx]
-
-        ndi = (band_a - band_b) / (band_a + band_b)
+        try:
+            ndi = (band_a - band_b) / (band_a + band_b)
+        except RuntimeWarning:
+            ndi = np.nan
 
         eopatch.add_feature(FeatureType.DATA, self.feature_name, ndi[..., np.newaxis])
 

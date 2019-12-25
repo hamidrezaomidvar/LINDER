@@ -8,9 +8,9 @@ from .task_util import merge_vector_data
 from pathlib import Path
 
 
-def calculate_fraction(path_out, path_shp, path_raster, patch_n, xn, yn):
+def calculate_fraction(path_shp, path_raster, xn=20, yn=20):
     # cast to Path
-    path_out = Path(path_out)
+    path_out = Path(path_shp).resolve().parent
 
     # retrieve name for this job from `path_shp`
     name_job = path_shp.stem[-3:]
@@ -52,18 +52,7 @@ def calculate_fraction(path_out, path_shp, path_raster, patch_n, xn, yn):
     )
     path_fn_v1 = Path(f"{name_v1}.shp")
     path_dir_v1 = Path(path_out) / path_fn_v1.stem
-    # v1_dir = (
-    #     path_out
-    #     + "/predict_GUF_roads_mod"
-    #     + str(patch_n)
-    #     + "/predict_GUF_roads_mod"
-    #     + str(patch_n)
-    #     + ".shp"
-    # )
-    # v2_dir = path_out + "/grid" + str(patch_n) + "/grid" + str(patch_n) + ".shp"
-    # out_dir = path_out + "/grid_intersect" + str(patch_n)
-    # grass_overlay(v1_dir, v2_dir, out_dir, patch_n, path_out, how="and")
-    # grid_intersect = gpd.read_file(out_dir)
+
     grid_intersect = grid_intersect.drop(["cat", "a_cat", "b_cat"], axis=1)
     grid_intersect["area"] = grid_intersect.area
 

@@ -1,10 +1,11 @@
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 from .fraction_util import calculate_fraction
 from .other_util import download_data, save_images
-from .predict_util import predict_image_one, predict_image_all
-from .task_util import other_tasks
+from .predict_util import predict_raster_patch
+from .task_util import predict_shape
 
 
 def get_land_cover(
@@ -23,10 +24,8 @@ def get_land_cover(
         yn=20,
         download_img=True,
 ):
-
     # size = 10  # display parameter. Do not change
     scale = abs((lat_left_top_t - lat_right_bot_t) / (lon_left_top_t - lon_right_bot_t))
-
 
     # use `no` to force skip building merging
     Building_data = "no"
@@ -36,7 +35,8 @@ def get_land_cover(
 
     # cast to Path
     path_GUF = Path(path_GUF)
-    list_of_GUF = list(path_GUF.glob("*tif"))
+    path_save = Path(path_save)
+    # list_of_GUF = list(path_GUF.glob("*tif"))
 
     # path_save = cname
     all_lats = np.linspace(lat_right_bot_t, lat_left_top_t, num=ny + 1)
@@ -54,38 +54,46 @@ def get_land_cover(
             coords_bot = [lat_right_bot, lon_right_bot]
 
             # download sentinel images
-            download_data(
-                path_save,
-                coords_top,
-                coords_bot,
-                patch_n,
-                s_date,
-                e_date,
-                download_img,
-            )
+            if download_img:
+                path_EOPatch = download_data(path_save, coords_top, coords_bot, patch_n, s_date, e_date)
+            else:
+                path_EOPatch = path_save / f"eopatch_{patch_n}"
+                if not path_EOPatch.exists():
+                    raise RuntimeError(
+                        '\n'.join([
+                            f'{path_EOPatch} does NOT exist!',
+                            ' set `download_img=True` to download Sentinel images.'
+                        ])
+                    )
 
-            # save images as local files
-            save_images(path_save, patch_n, scale)
+            # # save images as local files
+            # list_path_image = save_images(path_EOPatch, patch_n, scale)
 
             # index land cover by prediction
-            # predict_image_one(path_save, patch_n, scale)
-            list_path_raster = predict_image_all(path_save, patch_n, scale)
+            list_path_raster = predict_raster_patch(path_EOPatch, patch_n, scale)
 
             # other tasks
-            list_path_shp = other_tasks(
-                path_save,
-                path_GUF,
-                Building_data,
-                Road_data,
-                path_data_building,
-                lat_left_top,
-                lon_left_top,
-                lat_right_bot,
-                lon_right_bot,
-            )
+            list_path_shp = [
+                predict_shape(
+                    path_save,
+                    path_raster_predict,
+                    lat_left_top,
+                    lat_right_bot,
+                    lon_left_top,
+                    lon_right_bot,
+                    path_GUF,
+                    Road_data,
+                    Building_data,
+                    path_data_building,
+                )
+                for path_raster_predict in list_path_raster
+            ]
 
             for path_shp, path_raster in zip(list_path_shp, list_path_raster):
-                path_fraction = calculate_fraction(path_save, path_shp, path_raster, patch_n, xn, yn)
+                print("\nworking on")
+                print(f"shape file: {path_shp}")
+                print(f"raster file: {path_raster}")
+                path_fraction = calculate_fraction(path_shp, path_raster, xn, yn)
                 list_path_fraction.append(path_fraction)
             patch_n = patch_n + 1
 

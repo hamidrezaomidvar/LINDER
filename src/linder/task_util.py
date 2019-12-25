@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import time
+from functools import lru_cache
 from pathlib import Path
 
 import fiona
@@ -101,31 +102,50 @@ def other_tasks(
     path_out = Path(path_out)
 
     # get file list of predicted sentinel images
-    list_path_raster = sorted(list((path_out / "predicted_tiff").glob('*/*/*tiff')))
+    list_path_raster = sorted(list((path_out / "predicted_tiff").glob("*/*/*tiff")))
 
     # index land use of each tiff image
     list_path_shp_merge = [
-        predict_raster(path_out, path_raster_predict, Building_data, Road_data, building_dir,
-                       lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF)
+        predict_shape(
+            path_out,
+            path_raster_predict,
+            lat_left_top,
+            lat_right_bot,
+            lon_left_top,
+            lon_right_bot,
+            path_GUF,
+            Road_data,
+            Building_data,
+            building_dir,
+        )
         for path_raster_predict in list_path_raster
     ]
     return list_path_shp_merge
 
 
-def predict_raster(path_out, path_raster_predict,
-                   Building_data, Road_data, building_dir,
-                   lat_left_top, lat_right_bot,
-                   lon_left_top, lon_right_bot,
-                   path_GUF):
+def predict_shape(
+        path_out,
+        path_raster_predict,
+        lat_left_top,
+        lat_right_bot,
+        lon_left_top,
+        lon_right_bot,
+        path_GUF,
+        Road_data="OSM",
+        Building_data="no",
+        path_data_building=None,
+):
+    path_out = Path(path_out)
     # parse `patch_n` and `pic_n` from `path_raster_predict`
-    str_patch_n, str_pic_n = path_raster_predict.parts[-3:-1]
-    patch_n = int(str_patch_n.split('-')[-1])
-    pic_n = int(str_pic_n.split('-')[-1])
+    str_patch_n, str_pic_n = path_raster_predict.stem.split('-')[1:]
+    patch_n = int(str_patch_n.split("_")[-1])
+    pic_n = int(str_pic_n.split("_")[-1])
 
     raster_predict = rasterio.open(path_raster_predict)
     df = raster_predict.bounds
     sh_box = box(df.left, df.bottom, df.right, df.top)
     shape_box = gpd.GeoDataFrame({"geometry": sh_box, "col": [np.nan]})
+    # shape_box.crs = {"init": "epsg:4326"}
     shape_box.crs = {"init": "epsg:4326"}
 
     # path for saving shape_box
@@ -133,7 +153,7 @@ def predict_raster(path_out, path_raster_predict,
     path_shp = path_out / path_shp.stem / path_shp
     shape_box.to_file(path_shp.parent)
     box_domain = gpd.read_file(path_shp)
-    print("Converting the predicted tiff file to shapefile . . .")
+    print("Converting the predicted tiff file to shapefile ...")
     path_shp_predict = tif2shp(
         path_raster_predict,
         "predicted",
@@ -145,7 +165,7 @@ def predict_raster(path_out, path_raster_predict,
     )
     if Building_data != "no":
         clip_buildings(
-            Building_data, box_domain, building_dir, path_out, patch_n, pic_n
+            Building_data, box_domain, path_data_building, path_out, patch_n, pic_n
         )
     if Road_data != "no":
         download_OSM_road(
@@ -186,7 +206,7 @@ def predict_raster(path_out, path_raster_predict,
             )
     if path_GUF:
         if Building_data != "no" and Road_data == "no":
-            print("Merging the predicted-GUF to Building data . . .")
+            print("Merging the predicted-GUF to Building data ...")
             # key names
             name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
             name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
@@ -213,7 +233,7 @@ def predict_raster(path_out, path_raster_predict,
 
         if Road_data != "no":
             # if Building_data == "no":
-            print("Merging the predicted-GUF to Road data . . .")
+            print("Merging the predicted-GUF to Road data ...")
             # key names
             name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
             name_v2 = f"roads_{patch_n}-{pic_n}"
@@ -253,9 +273,7 @@ def predict_raster(path_out, path_raster_predict,
                     ("b_build", 1, 4),
                 ]
                 list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_build"]
-                str_fn_out = (
-                    f"predict_GUF_roads_{Building_data}_mod{patch_n}-{pic_n}"
-                )
+                str_fn_out = f"predict_GUF_roads_{Building_data}_mod{patch_n}-{pic_n}"
 
                 path_shp_merge = predict_vector(
                     list_rule,
@@ -271,7 +289,7 @@ def predict_raster(path_out, path_raster_predict,
 
     else:
         if Building_data != "no" and Road_data == "no":
-            print("Merging the predicted to Building data . . .")
+            print("Merging the predicted to Building data ...")
             # key names
             name_v1 = f"predicted_shape{patch_n}-{pic_n}"
             name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
@@ -303,7 +321,7 @@ def process_overlap(path_out, path_GUF, patch_n, pic_n):
     overlap_found = find_overlap(path_out, patch_n, pic_n, path_GUF)
     path_footprint_masked = path_out / f"masked_footprint{patch_n}-{pic_n}.tif"
     if overlap_found == 0:
-        print("Overlap is not found . . .")
+        print("Overlap is not found ...")
         sys.exit()
     elif overlap_found == 1:
         print("Overlap is found. Clipping the data..")
@@ -312,7 +330,7 @@ def process_overlap(path_out, path_GUF, patch_n, pic_n):
         )
         os.rename(path_footprint_overlap, path_footprint_masked)
     else:
-        print("more than one overlap is found . . .")
+        print("more than one overlap is found ...")
         path_footprint_masked = merge_overlap(overlap_found, path_footprint_masked)
     return path_footprint_masked
 
@@ -344,9 +362,7 @@ def tif2shp(path_raster, name_feature, name_out, path_out, box_domain, patch_n, 
         predicted = clip_shp(predicted, box_domain)
     except:
         print("Some exception happened when clipping urban_foot and box_domain")
-    path_shp = save_shp(
-        predicted, name_feature, name_out, path_out, patch_n, pic_n
-    )
+    path_shp = save_shp(predicted, name_feature, name_out, path_out, patch_n, pic_n)
     return path_shp
 
 
@@ -378,7 +394,7 @@ def gen_gdf(path_raster_in):
 
 
 def merge_GUF(path_out, path_raster, patch_n, pic_n):
-    print("Merging the GUF data with the predicted . . .")
+    print("Merging the GUF data with the predicted ...")
     time.sleep(3)
     # key names
     name_v1 = f"predicted_shape{patch_n}-{pic_n}"
@@ -420,7 +436,7 @@ def merge_OSM(
     path_OSM = download_OSM(
         path_out, patch_n, xtile_min, xtile_max, ytile_min, ytile_max, zoom,
     )
-    print("Attaching the OSM data together . . .")
+    print("Attaching the OSM data together ...")
     counter = 0
     for i in range(xtile_min, xtile_max + 1):
         for j in range(ytile_min, ytile_max + 1):
@@ -447,7 +463,7 @@ def clip_buildings(Building_data, box_domain, building_dir, path_out, patch_n, p
         path_osm = Path(f"OSM{patch_n}-{pic_n}_sh.shp")
         buildings = gpd.read_file(path_out / path_osm.stem / path_osm)
     elif Building_data == "MICROSOFT":
-        print("Reading the Microsoft building data . . .")
+        print("Reading the Microsoft building data ...")
         buildings = gpd.read_file(building_dir)
     print("Clipping the building data to the selected domain")
     buildings_clipped = clip_shp(buildings, box_domain)
@@ -516,7 +532,7 @@ def predict_feature(gdf_in, var_use, list_rule, list_var_drop, path_out, str_fn_
     gdf_out["LC"] = gdf_in["LC"]
     gdf_out = gdf_out.rename(columns={0: "geometry"})
     gdf_out.crs = {"init": "epsg:4326"}
-    print("dissolving the final result . . . .")
+    print("dissolving the final result ... .")
     gdf_out = gdf_out.dissolve("LC")
     gdf_out = gdf_out.reset_index()
 
@@ -533,16 +549,7 @@ def download_OSM_road(
     # cast to `Path`
     path_out_x = Path(path_out)
 
-    print("Downloading road data from OSM . . .")
-    G = ox.graph_from_bbox(
-        lat_left_top,
-        lat_right_bot,
-        lon_right_bot,
-        lon_left_top,
-        network_type="all_private",
-    )
-    G_projected = ox.project_graph(G)
-    gdf = ox.save_load.graph_to_gdfs(G_projected)[1]
+    gdf = download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top)
     road_kind = []
     for rd in gdf.highway:
         if rd[0] == "[":
@@ -568,10 +575,25 @@ def download_OSM_road(
     buffered.to_file(path_out_x / f"roads_all_{patch_n}-{pic_n}")
 
     buffered.cat = "5"
-    print("Dissolving roads . . .")
+    print("Dissolving roads ...")
     buffered = buffered.dissolve(by="cat")
     buffered = buffered.to_crs(epsg=4326)
     buffered.to_file(path_out_x / f"roads_{patch_n}-{pic_n}")
+
+
+@lru_cache(maxsize=32)
+def download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top):
+    print("Downloading road data from OSM ...")
+    G = ox.graph_from_bbox(
+        lat_left_top,
+        lat_right_bot,
+        lon_right_bot,
+        lon_left_top,
+        network_type="all_private",
+    )
+    G_projected = ox.project_graph(G)
+    gdf = ox.save_load.graph_to_gdfs(G_projected)[1]
+    return gdf
 
 
 def merge_vector_data(
@@ -602,7 +624,7 @@ def merge_vector_data(
 
 
 def download_OSM(path_out, patch_n, xtile_min, xtile_max, ytile_min, ytile_max, zoom):
-    print("Downloading the OSM data . . . ")
+    print("Downloading the OSM data ... ")
     to_wait = 60
     path_OSM = path_out / f"OSM{patch_n}"
     if not os.path.isdir(path_OSM):

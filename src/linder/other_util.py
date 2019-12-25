@@ -42,9 +42,7 @@ def check_sentinel_cfg():
         raise RuntimeError("\n".join(list_str_info))
 
 
-def download_data(
-    path_out, coords_top, coords_bot, patch_n, s_date, e_date, download_img
-):
+def download_data(path_save, coords_top, coords_bot, patch_n, s_date, e_date):
     # before moving onto actual tasks, check setup
     check_sentinel_cfg()
 
@@ -103,10 +101,12 @@ def download_data(
     )
 
     # TASK FOR SAVING TO OUTPUT (if needed)
-    if not os.path.isdir(path_out):
-        os.makedirs(path_out)
+    path_save = Path(path_save)
+    path_save.mkdir(exist_ok=True)
+    # if not os.path.isdir(path_save):
+    #     os.makedirs(path_save)
     save = SaveToDisk(
-        path_out, overwrite_permission=OverwritePermission.OVERWRITE_PATCH
+        path_save, overwrite_permission=OverwritePermission.OVERWRITE_PATCH
     )
 
     # Define the workflow
@@ -122,6 +122,8 @@ def download_data(
     # define additional parameters of the workflow
     execution_args = []
 
+    path_EOPatch = path_save / f"eopatch_{patch_n}"
+
     execution_args.append(
         {
             add_data: {
@@ -131,37 +133,39 @@ def download_data(
                 ),
                 "time_interval": time_interval,
             },
-            save: {"eopatch_folder": f"eopatch_{patch_n}"},
+            save: {"eopatch_folder": path_EOPatch.stem},
         }
     )
 
-    if download_img:
-        executor = EOExecutor(workflow, execution_args, save_logs=True)
+    executor = EOExecutor(workflow, execution_args, save_logs=True)
 
-        print("Downloading Satellite data . . .")
+    print("Downloading Satellite data ...")
 
-        executor.run(workers=2, multiprocess=False)
-        if executor.get_failed_executions():
-            raise RuntimeError("EOExecutor failed in finishing tasks!")
+    executor.run(workers=2, multiprocess=False)
+    if executor.get_failed_executions():
+        raise RuntimeError("EOExecutor failed in finishing tasks!")
 
-        executor.make_report()
-        print("Satellite data is downloaded")
+    executor.make_report()
+    print("Satellite data is downloaded")
+    return path_EOPatch
 
 
-def save_images(path_out, patch_n, scale):
+def save_images(path_EOPatch: Path, patch_n: int, scale):
     # Draw the RGB image
     size = 20
-    (Path(path_out) / f"eopatch_{patch_n}").mkdir(exist_ok=True)
-    eopatch = EOPatch.load(f"{path_out}/eopatch_{patch_n}", lazy_loading=True)
-    image_dir = Path(path_out) / "images" / f"patch_{patch_n}"
-    if not os.path.isdir(image_dir):
-        os.makedirs(image_dir)
+    # (Path(path_out) / f"eopatch_{patch_n}").mkdir(exist_ok=True)
+    eopatch = EOPatch.load(path_EOPatch, lazy_loading=True)
+    path_dir_image = path_EOPatch.parent / "images" / f"patch_{patch_n}"
+    path_dir_image.mkdir(exist_ok=True)
+    # if not os.path.isdir(path_dir_image):
+    #     os.makedirs(path_dir_image)
 
-    print(f"saving the images into {image_dir} ...")
+    print(f"saving the images into {path_dir_image} ...")
 
     list_timestamp = eopatch.timestamp
+    list_path_image = []
     for i, timestamp in enumerate(list_timestamp):
-        str_ts = timestamp.isoformat()
+        str_timestamp = timestamp.isoformat()
 
         fig = plt.figure(figsize=(size * 1, size * scale))
         ax = plt.subplot(1, 1, 1)
@@ -169,8 +173,11 @@ def save_images(path_out, patch_n, scale):
         plt.xticks([])
         plt.yticks([])
         ax.set_aspect("auto")
-        fn = f"{str_ts}.png"
-        path_img = image_dir / fn
+        fn = f"{str_timestamp}.png"
+        path_img = path_dir_image / fn
         print(f"Saving {path_img}")
         plt.savefig(path_img)
         plt.close()
+        list_path_image.append(path_img)
+
+    return list_path_image
