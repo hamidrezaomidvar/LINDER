@@ -156,7 +156,7 @@ def save_images(path_EOPatch: Path, patch_n: int, scale):
     # (Path(path_out) / f"eopatch_{patch_n}").mkdir(exist_ok=True)
     eopatch = EOPatch.load(path_EOPatch, lazy_loading=True)
     path_dir_image = path_EOPatch.parent / "images" / f"patch_{patch_n}"
-    path_dir_image.mkdir(exist_ok=True)
+    path_dir_image.mkdir(parents=True, exist_ok=True)
     # if not os.path.isdir(path_dir_image):
     #     os.makedirs(path_dir_image)
 

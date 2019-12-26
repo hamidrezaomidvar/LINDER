@@ -5,7 +5,10 @@ import numpy as np
 from .fraction_util import calculate_fraction
 from .other_util import download_data, save_images
 from .predict_util import predict_raster_patch
-from .task_util import predict_shape
+from .task_util import predict_shape, download_OSM_box
+
+from multiprocessing import Pool
+from itertools import repeat
 
 
 def get_land_cover(
@@ -66,35 +69,50 @@ def get_land_cover(
                         ])
                     )
 
-            # # save images as local files
-            # list_path_image = save_images(path_EOPatch, patch_n, scale)
+            # save images as local files
+            list_path_image = save_images(path_EOPatch, patch_n, scale)
 
             # index land cover by prediction
             list_path_raster = predict_raster_patch(path_EOPatch, patch_n, scale)
 
+            if Road_data != 'no':
+                download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top)
+
             # other tasks
             list_path_shp = [
-                predict_shape(
-                    path_save,
-                    path_raster_predict,
-                    lat_left_top,
-                    lat_right_bot,
-                    lon_left_top,
-                    lon_right_bot,
-                    path_GUF,
-                    Road_data,
-                    Building_data,
-                    path_data_building,
-                )
+                predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
+                              Road_data, Building_data, path_data_building)
                 for path_raster_predict in list_path_raster
             ]
 
+            # p = Pool()
+            #
+            # list_prm_default = [lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
+            #                     Road_data, Building_data, path_data_building]
+            # list_path_shp = p.starmap(
+            #     predict_shape,
+            #     zip(
+            #         list_path_raster,
+            #         *[repeat(prm) for prm in list_prm_default]
+            #     )
+            # )
+
+            print("\nworking on land cover fraction calculation:")
             for path_shp, path_raster in zip(list_path_shp, list_path_raster):
-                print("\nworking on")
                 print(f"shape file: {path_shp}")
                 print(f"raster file: {path_raster}")
                 path_fraction = calculate_fraction(path_shp, path_raster, xn, yn)
                 list_path_fraction.append(path_fraction)
+
+            # list_prm_default = [xn, yn]
+            # list_path_fraction += p.starmap(
+            #     calculate_fraction,
+            #     zip(
+            #         list_path_shp, list_path_raster,
+            #         *[repeat(prm) for prm in list_prm_default]
+            #     )
+            # )
+
             patch_n = patch_n + 1
 
     return list_path_fraction

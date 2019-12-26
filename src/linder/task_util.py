@@ -13,7 +13,6 @@ import osmnx as ox
 import rasterio
 import rasterio.mask
 import requests
-from eolearn.core import EOPatch
 from rasterio.features import shapes
 from rasterio.merge import merge
 from shapely.geometry import box
@@ -86,56 +85,40 @@ def merge_overlap(overlap_found, path_merge):
     return path_merge
 
 
-# TODO: this function is too heavy; should be modularised into several independent ones.
-def other_tasks(
-        path_out,
-        path_GUF,
-        Building_data,
-        Road_data,
-        building_dir,
-        lat_left_top,
-        lon_left_top,
-        lat_right_bot,
-        lon_right_bot,
-):
-    # cast to Path
-    path_out = Path(path_out)
-
-    # get file list of predicted sentinel images
-    list_path_raster = sorted(list((path_out / "predicted_tiff").glob("*/*/*tiff")))
-
-    # index land use of each tiff image
-    list_path_shp_merge = [
-        predict_shape(
-            path_out,
-            path_raster_predict,
-            lat_left_top,
-            lat_right_bot,
-            lon_left_top,
-            lon_right_bot,
-            path_GUF,
-            Road_data,
-            Building_data,
-            building_dir,
-        )
-        for path_raster_predict in list_path_raster
-    ]
-    return list_path_shp_merge
+# def other_tasks(
+#         path_out,
+#         path_GUF,
+#         Building_data,
+#         Road_data,
+#         building_dir,
+#         lat_left_top,
+#         lon_left_top,
+#         lat_right_bot,
+#         lon_right_bot,
+# ):
+#     # cast to Path
+#     path_out = Path(path_out)
+#
+#     # get file list of predicted sentinel images
+#     list_path_raster = sorted(list((path_out / "predicted_tiff").glob("*/*/*tiff")))
+#
+#     # index land use of each tiff image
+#     list_path_shp_merge = [
+#         predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
+#                       Road_data, Building_data, building_dir)
+#         for path_raster_predict in list_path_raster
+#     ]
+#     return list_path_shp_merge
 
 
-def predict_shape(
-        path_out,
-        path_raster_predict,
-        lat_left_top,
-        lat_right_bot,
-        lon_left_top,
-        lon_right_bot,
-        path_GUF,
-        Road_data="OSM",
-        Building_data="no",
-        path_data_building=None,
-):
-    path_out = Path(path_out)
+def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
+                  Road_data="OSM", Building_data="no", path_data_building=None, ):
+    print('\n')
+    print(f'predicting shapefile using {path_raster_predict} ...')
+
+    # derive root path for output
+    path_out = path_raster_predict.parent.parent
+
     # parse `patch_n` and `pic_n` from `path_raster_predict`
     str_patch_n, str_pic_n = path_raster_predict.stem.split('-')[1:]
     patch_n = int(str_patch_n.split("_")[-1])
@@ -599,8 +582,8 @@ def download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top):
 def merge_vector_data(
         path_out: Path, path_raster: Path, name_v1: str, name_v2: str, name_out: str,
 ):
-    # TODO: why do we need this sleep?
-    time.sleep(3)
+    # # TODO: why do we need this sleep?
+    # time.sleep(3)
 
     # force cast to `Path`
     path_out_x = Path(path_out)
