@@ -42,7 +42,9 @@ def check_sentinel_cfg():
         raise RuntimeError("\n".join(list_str_info))
 
 
-def download_data(path_save, coords_top, coords_bot, patch_n, s_date, e_date):
+def download_data(
+        path_save, coords_top, coords_bot, patch_n, s_date, e_date, debug=False
+):
     # before moving onto actual tasks, check setup
     check_sentinel_cfg()
 
@@ -138,15 +140,17 @@ def download_data(path_save, coords_top, coords_bot, patch_n, s_date, e_date):
     )
 
     executor = EOExecutor(workflow, execution_args, save_logs=True)
-
-    print("Downloading Satellite data ...")
+    if debug:
+        print("Downloading Satellite data ...")
 
     executor.run(workers=2, multiprocess=False)
     if executor.get_failed_executions():
         raise RuntimeError("EOExecutor failed in finishing tasks!")
 
-    executor.make_report()
-    print("Satellite data is downloaded")
+    if debug:
+        executor.make_report()
+    if debug:
+        print("Satellite data is downloaded")
     return path_EOPatch
 
 

@@ -177,60 +177,62 @@ from pathlib import Path
 #             )
 
 
-def predict_raster_patch(path_EOPatch, patch_n, scale):
+def predict_raster_patch(path_EOPatch, patch_n, scale, debug=False):
     path_EOPatch = Path(path_EOPatch)
     model_path = path_module / "model.pkl"
     model = joblib.load(model_path)
 
-    eopatch = EOPatch.load(path_EOPatch, lazy_loading=True)
-
-    n_pics = eopatch.data["BANDS"].shape[0]
-
     # cnt = "n"
     # while cnt == "n":
+    # TASK TO LOAD EXISTING EOPATCHES
+    load = LoadFromDisk(path_EOPatch.parent)
 
-    # pic_n = int(input("Please choose the desired image number: "))
+    # TASK FOR CONCATENATION
+    concatenate = ConcatenateData("FEATURES", ["BANDS", "NDVI", "NDWI", "NORM"])
+    # concatenate = ConcatenateData('FEATURES', ['BANDS'])
+    # TASK FOR FILTERING OUT TOO CLOUDY SCENES
+    # keep frames with > 80 % valid coverage
+    valid_data_predicate = ValidDataFractionPredicate(0.8)
+    filter_task = SimpleFilterTask((FeatureType.MASK, 'IS_VALID'), valid_data_predicate)
+
+    save = SaveToDisk(
+        path_EOPatch.parent, overwrite_permission=OverwritePermission.OVERWRITE_PATCH
+    )
+
+    workflow = LinearWorkflow(
+        load,
+        concatenate,
+        filter_task,
+        #    linear_interp,
+        #     erosion,
+        #     spatial_sampling,
+        save,
+    )
+
+    execution_args = []
+    for idx in range(0, 1):
+        execution_args.append(
+            {
+                load: {"eopatch_folder": path_EOPatch.stem},
+                save: {"eopatch_folder": path_EOPatch.stem},
+            }
+        )
+    if debug:
+        print("Saving the features ...")
+    executor = EOExecutor(workflow, execution_args, save_logs=False)
+    executor.run(workers=5, multiprocess=False)
+
+    if debug:
+        executor.make_report()
+
+    # load from disk to determine number of valid pictures
+    eopatch = EOPatch.load(path_EOPatch, lazy_loading=True)
+    n_pics = eopatch.data["BANDS"].shape[0]
+
+    print(f'Number of valid pictures detected: {n_pics}')
+
     list_path_raster = []
     for pic_n in range(n_pics):
-        # TASK TO LOAD EXISTING EOPATCHES
-        load = LoadFromDisk(path_EOPatch.parent)
-
-        # TASK FOR CONCATENATION
-        concatenate = ConcatenateData("FEATURES", ["BANDS", "NDVI", "NDWI", "NORM"])
-        # concatenate = ConcatenateData('FEATURES', ['BANDS'])
-        # TASK FOR FILTERING OUT TOO CLOUDY SCENES
-        # keep frames with > 80 % valid coverage
-        # valid_data_predicate = ValidDataFractionPredicate(0.8)
-        # filter_task = SimpleFilterTask((FeatureType.MASK, 'IS_VALID'), valid_data_predicate)
-
-        save = SaveToDisk(
-            path_EOPatch.parent, overwrite_permission=OverwritePermission.OVERWRITE_PATCH
-        )
-
-        workflow = LinearWorkflow(
-            load,
-            concatenate,
-            # filter_task,
-            #    linear_interp,
-            #     erosion,
-            #     spatial_sampling,
-            save,
-        )
-
-        execution_args = []
-        for idx in range(0, 1):
-            execution_args.append(
-                {
-                    load: {"eopatch_folder": path_EOPatch.stem},
-                    save: {"eopatch_folder": path_EOPatch.stem},
-                }
-            )
-
-        print("Saving the features ...")
-        executor = EOExecutor(workflow, execution_args, save_logs=False)
-        executor.run(workers=5, multiprocess=False)
-
-        executor.make_report()
 
         # TASK TO LOAD EXISTING EOPATCHES
         load = LoadFromDisk(path_EOPatch.parent)
@@ -278,9 +280,11 @@ def predict_raster_patch(path_EOPatch, patch_n, scale):
 
         # uncomment below save the logs in the current directory and produce a report!
         # executor = EOExecutor(workflow, execution_args, save_logs=True)
-        print("Predicting the land cover ...")
+        if debug:
+            print("Predicting the land cover ...")
         executor.run(workers=5, multiprocess=False)
-        executor.make_report()
+        if debug:
+            executor.make_report()
 
         # PATH = path_out / "predicted_tiff" / f"patch{patch_n}"
         path_merged = tiff_location / f"merged_prediction-eopatch_{patch_n}-pic_{pic_n}.tiff"
@@ -322,8 +326,9 @@ def predict_raster_patch(path_EOPatch, patch_n, scale):
             ax.set_aspect("auto")
             del eopatch
 
-        print("saving the predicted image ...")
-        plt.savefig(path_EOPatch / f"predicted_vs_real_{patch_n}-{pic_n}.png")
+        if debug:
+            print("saving the predicted image ...")
+        plt.savefig(path_EOPatch.parent / f"predicted_vs_real_{patch_n}-{pic_n}.png")
 
     return list_path_raster
 

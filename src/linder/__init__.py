@@ -16,6 +16,7 @@ from ._linder_module import (
 
 from .task_util import merge_vector_data
 from .grass_util import grass_overlay
+from .fraction_util import proc_fraction
 
 # utilities
 # from . import util

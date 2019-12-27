@@ -56,11 +56,11 @@ list_path_fraction = ld.get_land_cover(
     -0.008555,
     51.489564,
     0.034932,
-    "2017-01-01",
+    "2016-01-01",
     "2017-10-01",
-    path_GUF="/Users/sunt05/Dropbox/6.Repos/land_cover/Data/GUF/WSF2015_v1_EPSG4326/WSF2015_v1_EPSG4326",
+    path_GUF="Data/GUF/WSF2015_v1_EPSG4326/WSF2015_v1_EPSG4326",
     path_data_building="ss",
-    path_save=Path("~/Downloads/xxx1").expanduser(),
+    path_save=Path("~/Downloads/xxx2").expanduser(),
     #     download_img=False,
 )
 

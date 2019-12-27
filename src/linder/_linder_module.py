@@ -1,3 +1,4 @@
+import os
 from itertools import repeat
 from multiprocessing import Pool
 from pathlib import Path
@@ -25,6 +26,7 @@ def get_land_cover(
         xn=20,
         yn=20,
         download_img=True,
+        debug=False,
 ):
     # size = 10  # display parameter. Do not change
     scale = abs((lat_left_top_t - lat_right_bot_t) / (lon_left_top_t - lon_right_bot_t))
@@ -57,25 +59,29 @@ def get_land_cover(
 
             # download sentinel images
             if download_img:
-                path_EOPatch = download_data(path_save, coords_top, coords_bot, patch_n, s_date, e_date)
+                path_EOPatch = download_data(
+                    path_save, coords_top, coords_bot, patch_n, s_date, e_date, debug
+                )
             else:
                 path_EOPatch = path_save / f"eopatch_{patch_n}"
                 if not path_EOPatch.exists():
                     raise RuntimeError(
-                        '\n'.join([
-                            f'{path_EOPatch} does NOT exist!',
-                            ' set `download_img=True` to download Sentinel images.'
-                        ])
+                        "\n".join(
+                            [
+                                f"{path_EOPatch} does NOT exist!",
+                                " set `download_img=True` to download Sentinel images.",
+                            ]
+                        )
                     )
 
             # save images as local files
             list_path_image = save_images(path_EOPatch, patch_n, scale)
 
             # index land cover by prediction
-            list_path_raster = predict_raster_patch(path_EOPatch, patch_n, scale)
+            list_path_raster = predict_raster_patch(path_EOPatch, patch_n, scale, debug)
 
-            if Road_data != 'no':
-                download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top)
+            if Road_data != "no":
+                download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, debug)
 
             # # other tasks
             # list_path_shp = [
@@ -90,29 +96,34 @@ def get_land_cover(
             #     # print(f"raster file: {path_raster}")
             #     path_fraction = calculate_fraction(path_shp, path_raster, xn, yn)
             #     list_path_fraction.append(path_fraction)
-
+            # n_worker = int(os.cpu_count() / 2 - 1)
             p = Pool()
             # merge vector layers
             list_prm_default = [
-                lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
-                Road_data, Building_data, path_data_building
+                lat_left_top,
+                lat_right_bot,
+                lon_left_top,
+                lon_right_bot,
+                path_GUF,
+                Road_data,
+                Building_data,
+                path_data_building,
+                debug,
             ]
             list_path_shp = p.starmap(
                 predict_shape,
-                zip(
-                    list_path_raster,
-                    *[repeat(prm) for prm in list_prm_default]
-                )
+                zip(list_path_raster, *[repeat(prm) for prm in list_prm_default]),
             )
 
             # calculate land cover fractions
-            list_prm_default = [xn, yn]
+            list_prm_default = [xn, yn, debug]
             list_path_fraction += p.starmap(
                 calculate_fraction,
                 zip(
-                    list_path_shp, list_path_raster,
-                    *[repeat(prm) for prm in list_prm_default]
-                )
+                    list_path_shp,
+                    list_path_raster,
+                    *[repeat(prm) for prm in list_prm_default],
+                ),
             )
 
             patch_n = patch_n + 1

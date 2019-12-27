@@ -111,19 +111,11 @@ def merge_overlap(overlap_found, path_merge):
 #     return list_path_shp_merge
 
 
-def predict_shape(
-        path_raster_predict,
-        lat_left_top,
-        lat_right_bot,
-        lon_left_top,
-        lon_right_bot,
-        path_GUF,
-        Road_data="OSM",
-        Building_data="no",
-        path_data_building=None,
-):
-    print("\n")
-    print(f"predicting shapefile using {path_raster_predict} ...")
+def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
+                  Road_data="OSM", Building_data="no", path_data_building=None, debug=False):
+    if debug:
+        print("\n")
+        print(f"predicting shapefile using {path_raster_predict} ...")
 
     # derive root path for output
     path_out = path_raster_predict.parent.parent
@@ -145,7 +137,10 @@ def predict_shape(
     path_shp = path_out / path_shp.stem / path_shp
     shape_box.to_file(path_shp.parent)
     box_domain = gpd.read_file(path_shp)
-    print("Converting the predicted tiff file to shapefile ...")
+
+    if debug:
+        print("Converting the predicted tiff file to shapefile ...")
+
     path_shp_predict = tif2shp(
         path_raster_predict,
         "predicted",
@@ -160,20 +155,15 @@ def predict_shape(
             Building_data, box_domain, path_data_building, path_out, patch_n, pic_n
         )
     if Road_data != "no":
-        download_OSM_road(
-            lat_left_top,
-            lat_right_bot,
-            lon_right_bot,
-            lon_left_top,
-            path_out,
-            patch_n,
-            pic_n,
-        )
+        download_OSM_road(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, path_out, patch_n, pic_n)
     if path_GUF:
-        print("Clipping the GUF data ...")
+        if debug:
+            print("Clipping the GUF data ...")
         path_footprint_masked = process_overlap(path_out, path_GUF, patch_n, pic_n)
 
-        print("Converting clipped GUF tiff to shapefile ...")
+        if debug:
+            print("Converting clipped GUF tiff to shapefile ...")
+
         path_shp_footprint = tif2shp(
             path_footprint_masked,
             "GUF",
@@ -198,11 +188,11 @@ def predict_shape(
             )
     if path_GUF:
         if Building_data != "no" and Road_data == "no":
-            print("Merging the predicted-GUF to Building data ...")
+            if debug:
+                print("Merging the predicted-GUF to Building data ...")
             # key names
             name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
             name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
-            name_out = f"predict_GUF_{Building_data}{patch_n}-{pic_n}"
 
             var_use = "a_LC"
             list_rule = [
@@ -224,11 +214,11 @@ def predict_shape(
 
         if Road_data != "no":
             # if Building_data == "no":
-            print("Merging the predicted-GUF to Road data ...")
+            if debug:
+                print("Merging the predicted-GUF to Road data ...")
             # key names
             name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
             name_v2 = f"roads_{patch_n}-{pic_n}"
-            name_out = f"predict_GUF_roads_{patch_n}-{pic_n}"
 
             var_use = "a_LC"
             list_rule = [
@@ -250,12 +240,12 @@ def predict_shape(
                 var_use,
             )
             if Building_data != "no":
-                print("Merging the predicted-GUF-roads to Building data ...")
+                if debug:
+                    print("Merging the predicted-GUF-roads to Building data ...")
 
                 # key names
                 name_v1 = f"predict_GUF_roads_mod{patch_n}-{pic_n}"
                 name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
-                name_out = f"predict_GUF_roads_{Building_data}{patch_n}-{pic_n}"
 
                 var_use = "a_LC"
                 list_rule = [
@@ -278,11 +268,11 @@ def predict_shape(
 
     else:
         if Building_data != "no" and Road_data == "no":
-            print("Merging the predicted to Building data ...")
+            if debug:
+                print("Merging the predicted to Building data ...")
             # key names
             name_v1 = f"predicted_shape{patch_n}-{pic_n}"
             name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
-            name_out = f"predict_{Building_data}{patch_n}-{pic_n}"
 
             var_use = "a_predicte"
             list_rule = [
@@ -527,13 +517,11 @@ def predict_feature(gdf_in, var_use, list_rule, list_var_drop, path_out, str_fn_
     return path_fn_out
 
 
-def download_OSM_road(
-        lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, path_out, patch_n, pic_n
-):
+def download_OSM_road(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, path_out, patch_n, pic_n, debug=False):
     # cast to `Path`
     path_out_x = Path(path_out)
 
-    gdf = download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top)
+    gdf = download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, False)
     road_kind = []
     for rd in gdf.highway:
         if rd[0] == "[":
@@ -559,15 +547,17 @@ def download_OSM_road(
     buffered.to_file(path_out_x / f"roads_all_{patch_n}-{pic_n}")
 
     buffered.cat = "5"
-    print("Dissolving roads ...")
+    if debug:
+        print("Dissolving roads ...")
     buffered = buffered.dissolve(by="cat")
     buffered = buffered.to_crs(epsg=4326)
     buffered.to_file(path_out_x / f"roads_{patch_n}-{pic_n}")
 
 
 @lru_cache(maxsize=32)
-def download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top):
-    print("Downloading road data from OSM ...")
+def download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, debug):
+    if debug:
+        print("Downloading road data from OSM ...")
     G = ox.graph_from_bbox(
         lat_left_top,
         lat_right_bot,

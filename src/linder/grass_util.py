@@ -10,32 +10,36 @@ import random
 import string
 from shutil import rmtree, copytree
 
-gisdb = os.path.join(os.path.expanduser("~"), "Documents")
-location = "nc_spm_08"
-mapset = "PERMANENT"
-gisbase = "/Applications/GRASS-7.6.app/Contents/Resources"
-os.environ["GISBASE"] = gisbase
-grass_pydir = os.path.join(gisbase, "etc", "python")
-sys.path.append(grass_pydir)
-os.environ["LD_LIBRARY_PATH"] = os.path.join(gisbase, "lib")
-
-import grass.script as gscript
-import grass.script.setup as gsetup
-
 
 def grass_overlay(path_v1, path_v2, path_raster, how="or"):
+    gisdb = os.path.join(os.path.expanduser("~"), "Documents")
+    location = "nc_spm_08"
+    mapset = "PERMANENT"
+    gisbase = "/Applications/GRASS-7.6.app/Contents/Resources"
+    os.environ["GISBASE"] = gisbase
+    grass_pydir = os.path.join(gisbase, "etc", "python")
+    sys.path.append(grass_pydir)
+    os.environ["LD_LIBRARY_PATH"] = os.path.join(gisbase, "lib")
+
+    import grass.script as gscript
+    import grass.script.setup as gsetup
+
     # start = time.time()
 
-    job_id = 'p'.join([x.split('_')[-1] for x in path_raster.stem.split('-')[-2:]])
-    job_id = 'p' + job_id + '_' + randomString()
-    v1_name = path_v1.stem.replace('-', '_') + randomString()
-    v2_name = path_v2.stem.replace('-', '_') + randomString()
+    job_id = "p".join([x.split("_")[-1] for x in path_raster.stem.split("-")[-2:]])
+    job_id = "p" + job_id + "_" + randomString()
+    v1_name = path_v1.stem.replace("-", "_") + randomString()
+    v2_name = path_v2.stem.replace("-", "_") + randomString()
 
-    # TODO: check if gisdb/nc_spm_08 folders exist?
-    # localise GISDB to avoid possible conflict in parallel mode
+    # set up GISDB and validate the path
     path_gisdb = Path(gisdb)
+    path_location_default = (path_gisdb / location).resolve()
+    if not (path_location_default / mapset / "DEFAULT_WIND").exists():
+        raise RuntimeError("GISDB is NOT properly set for GRASS.")
+
+    # localise GISDB to avoid possible conflict in parallel mode
     path_location_local = path_gisdb / job_id
-    copytree(path_gisdb / location, path_location_local)
+    copytree(path_location_default, path_location_local)
 
     gsetup.init(gisbase, gisdb, path_location_local.stem, mapset)
 
@@ -123,15 +127,17 @@ def force_del(out_file):
 
 def force_rm_path(path: Path):
     path = Path(path)
-    for child in path.glob('*'):
+    # recursively remove files
+    for child in path.glob("*"):
         if child.is_file():
             child.unlink()
         else:
             force_rm_path(child)
-        path.rmdir()
+    # remove the root directory once empty
+    path.rmdir()
 
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(stringLength))
+    return "".join(random.choice(letters) for i in range(stringLength))

@@ -8,15 +8,14 @@ from .task_util import merge_vector_data
 from pathlib import Path
 
 
-def calculate_fraction(path_shp, path_raster, xn=20, yn=20):
+def calculate_fraction(path_shp, path_raster, xn=20, yn=20, debug=False):
     # cast to Path
     path_out = Path(path_shp).resolve().parent
 
     # retrieve name for this job from `path_shp`
     name_job = path_shp.stem[-3:]
-
-    print(f"calculating the land cover fraction for patch-image {name_job} ...")
-    # path_shp = path_out + "/shape_box" + str(patch_n) + "/shape_box" + str(patch_n) + ".shp"
+    if debug:
+        print(f"calculating the land cover fraction for patch-image {name_job} ...")
     box = gpd.read_file(path_shp)
     xmin, ymin, xmax, ymax = box.total_bounds
     cols = list(np.linspace(xmin, xmax, xn, endpoint=True))
@@ -46,7 +45,6 @@ def calculate_fraction(path_shp, path_raster, xn=20, yn=20):
     # key names
     name_v1 = f"predict_GUF_roads_mod{name_job}"
     name_v2 = f"grid{name_job}"
-    # name_out = f"grid_intersect{name_job}"
     grid_intersect = merge_vector_data(path_out, path_raster, name_v1, name_v2)
     path_fn_v1 = Path(f"{name_v1}.shp")
     path_dir_v1 = Path(path_out) / path_fn_v1.stem
@@ -59,7 +57,7 @@ def calculate_fraction(path_shp, path_raster, xn=20, yn=20):
     temp["percentage"] = temp.area / temp.b_grid_are
     temp = temp.reset_index()
 
-    list_LC = gpd.read_file(path_dir_v1).LC.unique()
+    list_LC = gpd.read_file(path_dir_v1).LC.unique().astype(int)
     centroids = grid.centroid
     fraction = pd.DataFrame(
         columns=np.concatenate((["lat", "lon"], list_LC)), index=centroids.index
@@ -82,8 +80,33 @@ def calculate_fraction(path_shp, path_raster, xn=20, yn=20):
         a_list = aa.T.tolist()
         fraction.loc[i] = [centroids.loc[i].y, centroids.loc[i].x] + a_list
 
-    path_fraction = path_out / f"fraction{name_job}.csv"
+    path_fraction = path_out / f"fraction_{name_job}.csv"
+
+    # rename columns with explicit LC names
+    dict_cat4 = {
+        '0': 'water', '1': 'green', '2': 'urban', '3': 'other',
+    }
+    dict_cat5 = {
+        '0': 'water', '1': 'green', '2': 'building', '3': 'paved', '4': 'other'
+    }
+    dict_use = dict_cat4 if fraction.columns[2:].max() == 3 else dict_cat5
+    fraction = fraction.rename(dict_use, axis=1)
 
     fraction.to_csv(path_fraction)
 
     return path_fraction
+
+
+def proc_fraction(list_path_fraction: list) -> pd.DataFrame:
+    # load all fraction info into one DataFrame
+    df_lc_raw = pd.concat(
+        [pd.read_csv(p, index_col=[0]) for p in list_path_fraction],
+        keys=[i for i, p in enumerate(list_path_fraction)],
+    ).unstack(0)
+
+    # calculate median values of each land cover type
+    df_lc_median = df_lc_raw.median(level=0, axis=1).set_index(['lat', 'lon'])
+
+    # normalise values of each grid to make sums to ONE
+    df_lc = df_lc_median.apply(lambda ser: ser / ser.sum(), axis=1)
+    return df_lc
