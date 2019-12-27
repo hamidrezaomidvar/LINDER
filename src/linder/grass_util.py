@@ -24,7 +24,7 @@ import grass.script.setup as gsetup
 
 
 def grass_overlay(path_v1, path_v2, path_raster, how="or"):
-    start = time.time()
+    # start = time.time()
 
     job_id = 'p'.join([x.split('_')[-1] for x in path_raster.stem.split('-')[-2:]])
     job_id = 'p' + job_id + '_' + randomString()
@@ -96,9 +96,7 @@ def grass_overlay(path_v1, path_v2, path_raster, how="or"):
         overwrite=True,
     )
 
-    # gsetup.finish()
-
-    end = time.time()
+    # end = time.time()
     # print(f'time spent: {end - start:.2f} s\n')
 
     gdf_merge = gpd.read_file(out_file)
