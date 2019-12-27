@@ -1,15 +1,10 @@
+from enum import Enum
+
 import numpy as np
 from eolearn.core import (
     EOTask,
-    EOPatch,
-    LinearWorkflow,
     FeatureType,
-    OverwritePermission,
-    LoadFromDisk,
-    SaveToDisk,
-    EOExecutor,
 )
-from enum import Enum
 
 
 class SentinelHubValidData:

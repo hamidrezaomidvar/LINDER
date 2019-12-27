@@ -46,10 +46,8 @@ def calculate_fraction(path_shp, path_raster, xn=20, yn=20):
     # key names
     name_v1 = f"predict_GUF_roads_mod{name_job}"
     name_v2 = f"grid{name_job}"
-    name_out = f"grid_intersect{name_job}"
-    grid_intersect = merge_vector_data(
-        path_out, path_raster, name_v1, name_v2, name_out,
-    )
+    # name_out = f"grid_intersect{name_job}"
+    grid_intersect = merge_vector_data(path_out, path_raster, name_v1, name_v2)
     path_fn_v1 = Path(f"{name_v1}.shp")
     path_dir_v1 = Path(path_out) / path_fn_v1.stem
 

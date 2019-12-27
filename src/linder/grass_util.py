@@ -1,12 +1,14 @@
 import os
 import sys
 import time
+from pathlib import Path
 
 import geopandas as gpd
 import rasterio
 
 import random
 import string
+from shutil import rmtree, copytree
 
 gisdb = os.path.join(os.path.expanduser("~"), "Documents")
 location = "nc_spm_08"
@@ -21,40 +23,45 @@ import grass.script as gscript
 import grass.script.setup as gsetup
 
 
-def grass_overlay(v1_dir, v2_dir, out_dir, path_raster, how="or"):
+def grass_overlay(path_v1, path_v2, path_raster, how="or"):
     start = time.time()
 
     job_id = 'p'.join([x.split('_')[-1] for x in path_raster.stem.split('-')[-2:]])
-    job_id = 'p' + job_id
-    print(f'\nworking on {job_id}')
-    print(f'{v1_dir}, {v2_dir}')
-    print(f'gsetup.init: {job_id}')
-    # TODO: check if gisdb/nc_spm_08 folders exist?
-    gsetup.init(gisbase, gisdb, location, mapset)
+    job_id = 'p' + job_id + '_' + randomString()
+    v1_name = path_v1.stem.replace('-', '_') + randomString()
+    v2_name = path_v2.stem.replace('-', '_') + randomString()
 
-    print(f'g.proj: {job_id}')
+    # TODO: check if gisdb/nc_spm_08 folders exist?
+    # localise GISDB to avoid possible conflict in parallel mode
+    path_gisdb = Path(gisdb)
+    path_location_local = path_gisdb / job_id
+    copytree(path_gisdb / location, path_location_local)
+
+    gsetup.init(gisbase, gisdb, path_location_local.stem, mapset)
+
+    # print(f'g.proj: {job_id}')
     gscript.run_command(
         "g.proj", flags="c", proj4="+proj=longlat +datum=WGS84 +no_defs"
     )
 
-    print(f'v.in.ogr, vector 3: {job_id}')
+    # print(f'v.in.ogr, vector 3: {path_v1}')
     gscript.run_command(
         "v.in.ogr",
         min_area=0.0001,
         snap=-1.0,
-        input=v1_dir,
-        output=f"{job_id}_vector3",
+        input=path_v1,
+        output=v1_name,
         overwrite=True,
         flags="o",
     )
 
-    print(f'v.in.ogr, vector 4: {job_id}')
+    # print(f'v.in.ogr, vector 4: {path_v2}')
     gscript.run_command(
         "v.in.ogr",
         min_area=0.0001,
         snap=-1.0,
-        input=v2_dir,
-        output=f"{job_id}_vector4",
+        input=path_v2,
+        output=v2_name,
         overwrite=True,
         flags="o",
     )
@@ -62,23 +69,24 @@ def grass_overlay(v1_dir, v2_dir, out_dir, path_raster, how="or"):
     raster = rasterio.open(path_raster)
     df = raster.bounds
 
-    print(f'g.region: {job_id}')
+    # print(f'g.region: {job_id}')
     gscript.run_command("g.region", n=df.top, s=df.bottom, e=df.right, w=df.left)
 
-    print(f'v.overlay: {job_id}')
+    # print(f'v.overlay: {job_id}')
     gscript.run_command(
         "v.overlay",
         overwrite=True,
-        ainput=f"{job_id}_vector3",
+        ainput=v1_name,
         atype="area",
-        binput=f"{job_id}_vector4",
+        binput=v2_name,
         btype="area",
         operator=how,
         snap=0,
         output=f"{job_id}_output_b",
     )
     out_file = f"{job_id}.geojson"
-    print(f'v.out.ogr: {job_id}, {out_file}')
+    force_del(out_file)
+    # print(f'v.out.ogr: {job_id}, {out_file}')
     gscript.run_command(
         "v.out.ogr",
         type="auto",
@@ -90,16 +98,39 @@ def grass_overlay(v1_dir, v2_dir, out_dir, path_raster, how="or"):
 
     # gsetup.finish()
 
-    # this `sleep` is to allow enough time for writing out geojson before loading by geopandas
-    # time.sleep(4)
-
-    temp = gpd.read_file(out_file)
-    os.remove(out_file)
-
-    temp.crs = {"init": "epsg:4326"}
-    temp.to_file(out_dir)
     end = time.time()
-    print(f'time spent: {end - start:.2f} s\n')
+    # print(f'time spent: {end - start:.2f} s\n')
+
+    gdf_merge = gpd.read_file(out_file)
+    force_del(out_file)
+
+    gdf_merge.crs = {"init": "epsg:4326"}
+    gdf_merge.to_file(out_file)
+    gdf_merge = gpd.read_file(out_file)
+    force_del(out_file)
+
+    # remove local GISDB
+    force_del(path_location_local)
+
+    return gdf_merge
+
+
+def force_del(out_file):
+    if os.path.exists(out_file):
+        if os.path.isdir(out_file):
+            rmtree(out_file)
+        else:
+            os.remove(out_file)
+
+
+def force_rm_path(path: Path):
+    path = Path(path)
+    for child in path.glob('*'):
+        if child.is_file():
+            child.unlink()
+        else:
+            force_rm_path(child)
+        path.rmdir()
 
 
 def randomString(stringLength=10):

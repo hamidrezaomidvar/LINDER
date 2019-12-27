@@ -14,6 +14,8 @@ from ._linder_module import (
     get_land_cover
 )
 
+from .task_util import merge_vector_data
+from .grass_util import grass_overlay
 
 # utilities
 # from . import util

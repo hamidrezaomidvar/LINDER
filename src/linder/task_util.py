@@ -111,16 +111,25 @@ def merge_overlap(overlap_found, path_merge):
 #     return list_path_shp_merge
 
 
-def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
-                  Road_data="OSM", Building_data="no", path_data_building=None, ):
-    print('\n')
-    print(f'predicting shapefile using {path_raster_predict} ...')
+def predict_shape(
+        path_raster_predict,
+        lat_left_top,
+        lat_right_bot,
+        lon_left_top,
+        lon_right_bot,
+        path_GUF,
+        Road_data="OSM",
+        Building_data="no",
+        path_data_building=None,
+):
+    print("\n")
+    print(f"predicting shapefile using {path_raster_predict} ...")
 
     # derive root path for output
     path_out = path_raster_predict.parent.parent
 
     # parse `patch_n` and `pic_n` from `path_raster_predict`
-    str_patch_n, str_pic_n = path_raster_predict.stem.split('-')[1:]
+    str_patch_n, str_pic_n = path_raster_predict.stem.split("-")[1:]
     patch_n = int(str_patch_n.split("_")[-1])
     pic_n = int(str_pic_n.split("_")[-1])
 
@@ -205,7 +214,6 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
             path_shp_merge = predict_vector(
                 list_rule,
                 list_var_drop,
-                name_out,
                 name_v1,
                 name_v2,
                 path_out,
@@ -234,7 +242,6 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
             path_shp_merge = predict_vector(
                 list_rule,
                 list_var_drop,
-                name_out,
                 name_v1,
                 name_v2,
                 path_out,
@@ -261,7 +268,6 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
                 path_shp_merge = predict_vector(
                     list_rule,
                     list_var_drop,
-                    name_out,
                     name_v1,
                     name_v2,
                     path_out,
@@ -288,7 +294,6 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
             path_shp_merge = predict_vector(
                 list_rule,
                 list_var_drop,
-                name_out,
                 name_v1,
                 name_v2,
                 path_out,
@@ -321,7 +326,6 @@ def process_overlap(path_out, path_GUF, patch_n, pic_n):
 def predict_vector(
         list_rule,
         list_var_drop,
-        name_out,
         name_v1,
         name_v2,
         path_out,
@@ -329,9 +333,7 @@ def predict_vector(
         str_fn_out,
         var_use,
 ):
-    predict_GUF_rd = merge_vector_data(
-        path_out, path_raster, name_v1, name_v2, name_out,
-    )
+    predict_GUF_rd = merge_vector_data(path_out, path_raster, name_v1, name_v2)
     path_shp_predict = predict_feature(
         predict_GUF_rd, var_use, list_rule, list_var_drop, path_out, str_fn_out,
     )
@@ -382,8 +384,7 @@ def merge_GUF(path_out, path_raster, patch_n, pic_n):
     # key names
     name_v1 = f"predicted_shape{patch_n}-{pic_n}"
     name_v2 = f"urban_foot_shape{patch_n}-{pic_n}"
-    name_out = f"predict_GUF{patch_n}-{pic_n}"
-    predict_GUF = merge_vector_data(path_out, path_raster, name_v1, name_v2, name_out, )
+    predict_GUF = merge_vector_data(path_out, path_raster, name_v1, name_v2)
     predict_GUF = predict_GUF[~np.isnan(predict_GUF.a_predicte)]
     predict_GUF["LC"] = predict_GUF.a_predicte
     gdf_GUF = predict_GUF[
@@ -579,31 +580,23 @@ def download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top):
     return gdf
 
 
-def merge_vector_data(
-        path_out: Path, path_raster: Path, name_v1: str, name_v2: str, name_out: str,
-):
+def merge_vector_data(path_out: Path, path_raster: Path, name_v1: str, name_v2: str):
     # # TODO: why do we need this sleep?
     # time.sleep(3)
 
     # force cast to `Path`
     path_out_x = Path(path_out)
 
-    # filenames
-    path_fn_v1 = Path(f"{name_v1}.shp")
-    path_fn_v2 = Path(f"{name_v2}.shp")
-    path_fn_out = Path(f"{name_out}.shp")
     # dir names
-    path_dir_v1 = path_out_x / path_fn_v1.stem
-    path_dir_v2 = path_out_x / path_fn_v2.stem
-    path_dir_out = path_out_x / path_fn_out.stem
+    path_dir_v1 = path_out_x / name_v1
+    path_dir_v2 = path_out_x / name_v2
+    # path_dir_out = path_out_x / name_out
 
     # overlay results
-    grass_overlay(path_dir_v1, path_dir_v2, path_dir_out, path_raster)
+    gdf_merge = grass_overlay(path_dir_v1, path_dir_v2, path_raster)
+    gdf_out = gdf_merge.copy()
 
-    # load geoDF as returned object for later processing
-    gdf_merge = gpd.read_file(path_dir_out / path_fn_out)
-
-    return gdf_merge
+    return gdf_out
 
 
 def download_OSM(path_out, patch_n, xtile_min, xtile_max, ytile_min, ytile_max, zoom):
