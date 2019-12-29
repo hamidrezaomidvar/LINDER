@@ -1,8 +1,31 @@
-# Pipeline for calculating land cover over urban/rural areas:
+# LINDER: Land use INDexER
 
-## which file to read first?
+A pipeline for calculating land cover over urban/rural areas.
 
-`get_land_cover.py`
+## How to use?
+
+*A quick demo:*
+
+```python
+from pathlib import Path
+import linder as ld
+
+# get a list of CSV files of calculated land cover fractions of all downloaded images
+list_path_fraction = ld.get_land_cover(
+    51.515070,
+    -0.008555,
+    51.489564,
+    0.034932,
+    "2016-01-01",
+    "2017-10-01",
+    path_GUF="Data/GUF/WSF2015_v1_EPSG4326/WSF2015_v1_EPSG4326",
+    path_save=Path("~/Downloads/linder_res").expanduser(),
+)
+
+# synthesise the above results to one `DataFrame`
+df_lc = ld.proc_fraction(list_path_fraction)
+
+```
 
 ## Required libraries
 

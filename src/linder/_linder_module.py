@@ -19,12 +19,12 @@ def get_land_cover(
         s_date,
         e_date,
         path_GUF,
-        path_data_building,
         path_save,
         nx=1,
         ny=1,
         xn=20,
         yn=20,
+        path_data_building=None,
         download_img=True,
         debug=False,
 ):
