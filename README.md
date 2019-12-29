@@ -106,13 +106,13 @@ Some technical details:
 
 **Colombo, Sri Lanka**
 
-![](./Examples/Colombo.png)
+![Colombo, Sri Lanka](https://github.com/hamidrezaomidvar/land_cover/raw/master/Examples/Colombo.png)
 
 
 **Matara, Sri Lanka**
 
-![](./Examples/Matara.png)
+![Matara, Sri Lanka](https://github.com/hamidrezaomidvar/land_cover/raw/master/Examples/Matara.png)
 
 **Jaffna, Sri Lanka**
 
-![](./Examples/Jaffna.png)
+![Jaffna, Sri Lanka](https://github.com/hamidrezaomidvar/land_cover/raw/master/Examples/Jaffna.png)
