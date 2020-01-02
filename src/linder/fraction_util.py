@@ -13,7 +13,7 @@ def calculate_fraction(path_shp, path_raster, xn=20, yn=20, debug=False):
     path_out = Path(path_shp).resolve().parent
 
     # retrieve name for this job from `path_shp`
-    name_job = path_shp.stem[-3:]
+    name_job = path_shp.stem.split('_')[-1]
     if debug:
         print(f"calculating the land cover fraction for patch-image {name_job} ...")
     box = gpd.read_file(path_shp)
@@ -41,10 +41,10 @@ def calculate_fraction(path_shp, path_raster, xn=20, yn=20, debug=False):
     grid.crs = box.crs
     grid["grid_num"] = grid.index
     grid["grid_area"] = grid.area
-    grid.to_file(path_out / f"grid{name_job}")
+    grid.to_file(path_out / f"grid_{name_job}")
     # key names
-    name_v1 = f"predict_GUF_roads_mod{name_job}"
-    name_v2 = f"grid{name_job}"
+    name_v1 = f"predict_GUF_roads_mod_{name_job}"
+    name_v2 = f"grid_{name_job}"
     grid_intersect = merge_vector_data(path_out, path_raster, name_v1, name_v2)
     path_fn_v1 = Path(f"{name_v1}.shp")
     path_dir_v1 = Path(path_out) / path_fn_v1.stem

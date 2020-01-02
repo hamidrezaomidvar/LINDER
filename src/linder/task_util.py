@@ -23,13 +23,13 @@ from .grass_util import grass_overlay
 
 
 def find_overlap(path_out, patch_n, pic_n, path_GUF):
-    path_shp = Path(f"shape_box{patch_n}-{pic_n}.shp")
-    with fiona.open(path_out / path_shp.stem / path_shp, "r", ) as shapefile:
+    path_shp = Path(f"shape_box_{patch_n}-{pic_n}.shp")
+    with fiona.open(path_out / path_shp.stem, "r", ) as shapefile:
         features = [feature["geometry"] for feature in shapefile]
 
-    list_of_GUF = list(path_GUF.glob("*tif"))
+    # list_of_GUF = list(path_GUF.glob("*tif"))
     overlap_found = 0
-    for GUF_data_dir in list_of_GUF:
+    for GUF_data_dir in path_GUF.glob("*tif"):
 
         try:
             with rasterio.open(GUF_data_dir) as src:
@@ -47,7 +47,7 @@ def find_overlap(path_out, patch_n, pic_n, path_GUF):
             )
 
             with rasterio.open(
-                    path_out / f"masked_footprint{patch_n}-{pic_n}{overlap_found}.tif",
+                    path_out / f"masked_footprint_{patch_n}-{pic_n}-{overlap_found}.tif",
                     "w",
                     **out_meta,
             ) as dest:
@@ -60,7 +60,7 @@ def find_overlap(path_out, patch_n, pic_n, path_GUF):
 
 def merge_overlap(overlap_found, path_merge):
     all_files = [
-        path_merge.parent / (path_merge.stem + f"{i}.tif")
+        path_merge.parent / (path_merge.stem + f"-{i}.tif")
         for i in range(1, overlap_found + 1)
     ]
     src_files_to_mosaic = [rasterio.open(fp) for fp in all_files]
@@ -133,7 +133,7 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
     shape_box.crs = {"init": "epsg:4326"}
 
     # path for saving shape_box
-    path_shp = Path(f"shape_box{patch_n}-{pic_n}.shp")
+    path_shp = Path(f"shape_box_{patch_n}-{pic_n}.shp")
     path_shp = path_out / path_shp.stem / path_shp
     shape_box.to_file(path_shp.parent)
     box_domain = gpd.read_file(path_shp)
@@ -191,15 +191,15 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
             if debug:
                 print("Merging the predicted-GUF to Building data ...")
             # key names
-            name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
-            name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
+            name_v1 = f"predict_GUF_mod_{patch_n}-{pic_n}"
+            name_v2 = f"{Building_data}_sh_clipped_{patch_n}-{pic_n}"
 
             var_use = "a_LC"
             list_rule = [
                 ("b_build", 1, 4),
             ]
             list_var_drop = ["a_cat", "b_cat", "a_LC", "b_build"]
-            str_fn_out = f"predict_GUF_{Building_data}_mod{patch_n}-{pic_n}"
+            str_fn_out = f"predict_GUF_{Building_data}_mod_{patch_n}-{pic_n}"
 
             path_shp_merge = predict_vector(
                 list_rule,
@@ -217,7 +217,7 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
             if debug:
                 print("Merging the predicted-GUF to Road data ...")
             # key names
-            name_v1 = f"predict_GUF_mod{patch_n}-{pic_n}"
+            name_v1 = f"predict_GUF_mod_{patch_n}-{pic_n}"
             name_v2 = f"roads_{patch_n}-{pic_n}"
 
             var_use = "a_LC"
@@ -227,7 +227,7 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
                 ("LC", 5, 0),
             ]
             list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_FID"]
-            str_fn_out = f"predict_GUF_roads_mod{patch_n}-{pic_n}"
+            str_fn_out = f"predict_GUF_roads_mod_{patch_n}-{pic_n}"
 
             path_shp_merge = predict_vector(
                 list_rule,
@@ -244,8 +244,8 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
                     print("Merging the predicted-GUF-roads to Building data ...")
 
                 # key names
-                name_v1 = f"predict_GUF_roads_mod{patch_n}-{pic_n}"
-                name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
+                name_v1 = f"predict_GUF_roads_mod_{patch_n}-{pic_n}"
+                name_v2 = f"{Building_data}_sh_clipped_{patch_n}-{pic_n}"
 
                 var_use = "a_LC"
                 list_rule = [
@@ -253,7 +253,7 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
                     ("b_build", 1, 4),
                 ]
                 list_var_drop = ["cat", "a_cat", "b_cat", "a_LC", "b_build"]
-                str_fn_out = f"predict_GUF_roads_{Building_data}_mod{patch_n}-{pic_n}"
+                str_fn_out = f"predict_GUF_roads_{Building_data}_mod_{patch_n}-{pic_n}"
 
                 path_shp_merge = predict_vector(
                     list_rule,
@@ -271,15 +271,15 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
             if debug:
                 print("Merging the predicted to Building data ...")
             # key names
-            name_v1 = f"predicted_shape{patch_n}-{pic_n}"
-            name_v2 = f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
+            name_v1 = f"predicted_shape_{patch_n}-{pic_n}"
+            name_v2 = f"{Building_data}_sh_clipped_{patch_n}-{pic_n}"
 
             var_use = "a_predicte"
             list_rule = [
                 ("b_build", 1, 3),
             ]
             list_var_drop = ["a_cat", "b_cat", "a_predicte", "b_build"]
-            str_fn_out = f"predict_{Building_data}_mod{patch_n}-{pic_n}"
+            str_fn_out = f"predict_{Building_data}_mod_{patch_n}-{pic_n}"
 
             path_shp_merge = predict_vector(
                 list_rule,
@@ -295,16 +295,16 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
     return path_shp_merge
 
 
-def process_overlap(path_out, path_GUF, patch_n, pic_n):
-    overlap_found = find_overlap(path_out, patch_n, pic_n, path_GUF)
-    path_footprint_masked = path_out / f"masked_footprint{patch_n}-{pic_n}.tif"
+def process_overlap(path_save, path_GUF, patch_n, pic_n):
+    overlap_found = find_overlap(path_save, patch_n, pic_n, path_GUF)
+    path_footprint_masked = path_save / f"masked_footprint_{patch_n}-{pic_n}.tif"
     if overlap_found == 0:
-        print("Overlap is not found ...")
-        sys.exit()
+        raise RuntimeError("Overlap is not found ...")
+        # sys.exit()
     elif overlap_found == 1:
         print("Overlap is found. Clipping the data..")
         path_footprint_overlap = (
-                path_out / path_footprint_masked.stem + f"{overlap_found}.tif"
+                path_save / (path_footprint_masked.stem + f"-{overlap_found}.tif")
         )
         os.rename(path_footprint_overlap, path_footprint_masked)
     else:
@@ -349,7 +349,7 @@ def save_shp(gdf_in, name_feature, name_save, path_out, patch_n, pic_n):
     urban_foot_temp[name_feature] = gdf_in[name_feature]
     urban_foot_temp = urban_foot_temp.rename(columns={0: "geometry"})
     urban_foot_temp.crs = {"init": "epsg:4326"}
-    path_shp_save = path_out / f"{name_save}{patch_n}-{pic_n}"
+    path_shp_save = path_out / f"{name_save}_{patch_n}-{pic_n}"
     urban_foot_temp.to_file(path_shp_save)
     return path_shp_save
 
@@ -372,8 +372,8 @@ def merge_GUF(path_out, path_raster, patch_n, pic_n):
     print("Merging the GUF data with the predicted ...")
     time.sleep(3)
     # key names
-    name_v1 = f"predicted_shape{patch_n}-{pic_n}"
-    name_v2 = f"urban_foot_shape{patch_n}-{pic_n}"
+    name_v1 = f"predicted_shape_{patch_n}-{pic_n}"
+    name_v2 = f"urban_foot_shape_{patch_n}-{pic_n}"
     predict_GUF = merge_vector_data(path_out, path_raster, name_v1, name_v2)
     predict_GUF = predict_GUF[~np.isnan(predict_GUF.a_predicte)]
     predict_GUF["LC"] = predict_GUF.a_predicte
@@ -397,7 +397,7 @@ def merge_GUF(path_out, path_raster, patch_n, pic_n):
     predict_GUF_temp["LC"] = predict_GUF["LC"]
     predict_GUF_temp = predict_GUF_temp.rename(columns={0: "geometry"})
     predict_GUF_temp.crs = {"init": "epsg:4326"}
-    predict_GUF_temp.to_file(path_out / f"predict_GUF_mod{patch_n}-{pic_n}")
+    predict_GUF_temp.to_file(path_out / f"predict_GUF_mod_{patch_n}-{pic_n}")
     return gdf_GUF
 
 
@@ -415,7 +415,7 @@ def merge_OSM(
     for i in range(xtile_min, xtile_max + 1):
         for j in range(ytile_min, ytile_max + 1):
             try:
-                gdf_tile = gpd.read_file(path_OSM / f"buildings{i}-{j}.geojson")
+                gdf_tile = gpd.read_file(path_OSM / f"buildings_{i}-{j}.geojson")
                 gdf_tile = gdf_tile.buffer(0)
 
                 if counter == 0:
@@ -434,7 +434,7 @@ def merge_OSM(
 
 def clip_buildings(Building_data, box_domain, building_dir, path_out, patch_n, pic_n):
     if Building_data == "OSM":
-        path_osm = Path(f"OSM{patch_n}-{pic_n}_sh.shp")
+        path_osm = Path(f"OSM_{patch_n}-{pic_n}_sh.shp")
         buildings = gpd.read_file(path_out / path_osm.stem / path_osm)
     elif Building_data == "MICROSOFT":
         print("Reading the Microsoft building data ...")
@@ -446,7 +446,7 @@ def clip_buildings(Building_data, box_domain, building_dir, path_out, patch_n, p
     buildings_clipped["build"] = 1
     buildings_clipped = buildings_clipped.rename(columns={0: "geometry"})
     buildings_clipped.crs = {"init": "epsg:4326"}
-    path_fn = path_out / f"{Building_data}_sh_clipped{patch_n}-{pic_n}"
+    path_fn = path_out / f"{Building_data}_sh_clipped_{patch_n}-{pic_n}"
     print(f"Writing clipped data into {path_fn.as_posix()}")
     buildings_clipped.to_file(path_fn)
 
@@ -599,7 +599,7 @@ def download_OSM(path_out, patch_n, xtile_min, xtile_max, ytile_min, ytile_max, 
     for i in np.arange(xtile_min, xtile_max + 1):
         print(f"Xtile {i - xtile_min + 1} out of {xtile_max - xtile_min + 1}")
         for j in np.arange(ytile_min, ytile_max + 1):
-            path_geojson = path_OSM / f"buildings{i}-{j}.geojson"
+            path_geojson = path_OSM / f"buildings_{i}-{j}.geojson"
             if not path_geojson.exists():
                 url = f"https://a.data.osmbuildings.org/0.2/anonymous/tile/{zoom}/{i}/{j}.json"
                 try:
