@@ -38,7 +38,13 @@ def get_land_cover(
     Road_data = "OSM"
 
     # cast to Path
-    path_GUF = Path(path_GUF)
+    if path_GUF:
+        path_GUF = Path(path_GUF)
+        print(f'path_GUF: {path_GUF}')
+        # check if GUF data existing
+        list_tif_GUF=list(path_GUF.glob('*tif'))
+        if len(list_tif_GUF)==0:
+            raise RuntimeError(f'No tiff images found in the specified GUF path:\n {path_GUF.resolve().as_posix()}')
     path_save = Path(path_save)
     # list_of_GUF = list(path_GUF.glob("*tif"))
 
