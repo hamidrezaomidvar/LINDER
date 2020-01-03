@@ -79,9 +79,9 @@ This is a pipeline for calculating the landcover over desired regions. It includ
 - Step 2: Getting the satellite image for the desired region
 
 - Step 3: Prediction of the land cover into 3 categories:
-  - 1-Water
+  - 1-Urban
   - 2-Green
-  - 3-Urban and
+  - 3-Water and
   - 4-other
 
 - Step 4: Overlaying the [GUF](https://www.dlr.de/eoc/en/desktopdefault.aspx/tabid-9628/16557_read-40454/) data into the prediction. Therefore the landcover becomes 1-Water 2-Green 3-Urban 4-Other

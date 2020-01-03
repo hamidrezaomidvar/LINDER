@@ -84,10 +84,13 @@ def calculate_fraction(path_shp, path_raster, xn=20, yn=20, debug=False):
 
     # rename columns with explicit LC names
     dict_cat4 = {
-        '0': 'water', '1': 'green', '2': 'urban', '3': 'other',
+        # '0': 'water', '1': 'green', '2': 'urban', '3': 'other',
+        '0': 'urban', '1': 'green', '2': 'water', '3': 'other',
+        # '0': 'road', '1': 'green', '2': 'water', '3': 'other', '4': 'building'
     }
     dict_cat5 = {
-        '0': 'water', '1': 'green', '2': 'building', '3': 'paved', '4': 'other'
+        # '0': 'water', '1': 'green', '2': 'building', '3': 'paved', '4': 'other'
+        '0': 'road', '1': 'green', '2': 'water', '3': 'other', '4': 'building'
     }
     dict_use = dict_cat4 if fraction.columns[2:].max() == 3 else dict_cat5
     fraction = fraction.rename(dict_use, axis=1)
