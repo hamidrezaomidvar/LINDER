@@ -169,7 +169,8 @@ def save_images(path_EOPatch: Path, patch_n: int, scale):
     list_timestamp = eopatch.timestamp
     list_path_image = []
     for i, timestamp in enumerate(list_timestamp):
-        str_timestamp = timestamp.isoformat()
+        # replace `:` with `_` to avoid path issue on Windows
+        str_timestamp = timestamp.isoformat().replace(':','_')
 
         fig = plt.figure(figsize=(size * 1, size * scale))
         ax = plt.subplot(1, 1, 1)
