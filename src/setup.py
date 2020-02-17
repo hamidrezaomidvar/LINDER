@@ -27,7 +27,7 @@ setup(
     ),
     license="GPL-V3.0",
     packages=["linder"],
-    package_data={"linder": ["*.json",]},
+    package_data={"linder": ["*.json","model.pkl"]},
     # distclass=BinaryDistribution,
     ext_modules=[],
     install_requires=[
