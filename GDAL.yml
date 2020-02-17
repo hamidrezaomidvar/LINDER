@@ -9,7 +9,7 @@ dependencies:
   - rasterio
   - shapely
   - geopandas
-  - osmnx
+  - osmnx==0.10
   - llvmlite
   - numba
   - jupyter
@@ -17,6 +17,8 @@ dependencies:
   - rope
   - pip
   - pip:
+    - linder
+    - pathlib
     - eo-learn==0.6.0
     - pandas==0.25.3
     - sentinelhub==2.6.0
