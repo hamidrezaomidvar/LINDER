@@ -7,14 +7,14 @@ dependencies:
   - black
   - gdal
   - rasterio
-  - shapely
-  - geopandas
-  - osmnx==0.10
   - llvmlite
   - numba
   - jupyter
   - pylint
   - rope
+  - osmnx==0.10
+  - geopandas==0.6.0
+  - shapely
   - pip
   - pip:
     - linder
