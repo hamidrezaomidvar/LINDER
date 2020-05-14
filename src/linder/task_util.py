@@ -77,7 +77,6 @@ def merge_overlap(overlap_found, path_merge):
         }
     )
 
-    # path_merge = path_out / f"masked_footprint{patch_n}-{pic_n}.tif"
 
     with rasterio.open(path_merge, "w", **out_meta) as dest:
         dest.write(mosaic)
@@ -85,33 +84,8 @@ def merge_overlap(overlap_found, path_merge):
     return path_merge
 
 
-# def other_tasks(
-#         path_out,
-#         path_GUF,
-#         Building_data,
-#         Road_data,
-#         building_dir,
-#         lat_left_top,
-#         lon_left_top,
-#         lat_right_bot,
-#         lon_right_bot,
-# ):
-#     # cast to Path
-#     path_out = Path(path_out)
-#
-#     # get file list of predicted sentinel images
-#     list_path_raster = sorted(list((path_out / "predicted_tiff").glob("*/*/*tiff")))
-#
-#     # index land use of each tiff image
-#     list_path_shp_merge = [
-#         predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
-#                       Road_data, Building_data, building_dir)
-#         for path_raster_predict in list_path_raster
-#     ]
-#     return list_path_shp_merge
 
-
-def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
+def predict_shape(path_raster_predict,lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
                   Road_data="OSM", Building_data="no", path_data_building=None, debug=False):
     if debug:
         print("\n")
@@ -129,7 +103,6 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
     df = raster_predict.bounds
     sh_box = box(df.left, df.bottom, df.right, df.top)
     shape_box = gpd.GeoDataFrame({"geometry": sh_box, "col": [np.nan]})
-    # shape_box.crs = {"init": "epsg:4326"}
     shape_box.crs = {"init": "epsg:4326"}
 
     # path for saving shape_box
@@ -150,10 +123,9 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
         patch_n,
         pic_n,
     )
+
     if Building_data != "no":
-        clip_buildings(
-            Building_data, box_domain, path_data_building, path_out, patch_n, pic_n
-        )
+        clip_buildings(Building_data, box_domain, path_data_building, path_out, patch_n, pic_n)
     if Road_data != "no":
         download_OSM_road(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, path_out, patch_n, pic_n)
     if path_GUF:
@@ -213,7 +185,6 @@ def predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top
             )
 
         if Road_data != "no":
-            # if Building_data == "no":
             if debug:
                 print("Merging the predicted-GUF to Road data ...")
             # key names

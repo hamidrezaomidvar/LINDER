@@ -7,7 +7,7 @@ import numpy as np
 
 from .fraction_util import calculate_fraction
 from .other_util import download_data, save_images
-from .predict_util import predict_raster_patch
+from .predict_util import predict_raster_patch, predict_final_mode
 from .task_util import download_OSM_box, predict_shape
 
 
@@ -29,7 +29,8 @@ def get_land_cover(
         debug=False,
 ):
     # size = 10  # display parameter. Do not change
-    scale = abs((lat_left_top_t - lat_right_bot_t) / (lon_left_top_t - lon_right_bot_t))
+    scale = abs((lat_left_top_t - lat_right_bot_t) /
+                (lon_left_top_t - lon_right_bot_t))
 
     # use `no` to force skip building merging
     Building_data = "no"
@@ -42,9 +43,10 @@ def get_land_cover(
         path_GUF = Path(path_GUF)
         print(f'path_GUF: {path_GUF}')
         # check if GUF data existing
-        list_tif_GUF=list(path_GUF.glob('*tif'))
-        if len(list_tif_GUF)==0:
-            raise RuntimeError(f'No tiff images found in the specified GUF path:\n {path_GUF.resolve().as_posix()}')
+        list_tif_GUF = list(path_GUF.glob('*tif'))
+        if len(list_tif_GUF) == 0:
+            raise RuntimeError(
+                f'No tiff images found in the specified GUF path:\n {path_GUF.resolve().as_posix()}')
     path_save = Path(path_save)
     # list_of_GUF = list(path_GUF.glob("*tif"))
 
@@ -84,53 +86,60 @@ def get_land_cover(
             list_path_image = save_images(path_EOPatch, patch_n, scale)
 
             # index land cover by prediction
-            list_path_raster = predict_raster_patch(path_EOPatch, patch_n, scale, debug)
+            list_path_raster = predict_raster_patch(
+                path_EOPatch, patch_n, scale, debug)
+
+            path_predict_final = predict_final_mode(
+                path_EOPatch, patch_n, debug)
 
             if Road_data != "no":
-                download_OSM_box(lat_left_top, lat_right_bot, lon_right_bot, lon_left_top, debug)
+                download_OSM_box(lat_left_top, lat_right_bot,
+                                 lon_right_bot, lon_left_top, debug)
 
-            # # other tasks
-            # list_path_shp = [
-            #     predict_shape(path_raster_predict, lat_left_top, lat_right_bot, lon_left_top, lon_right_bot, path_GUF,
-            #                   Road_data, Building_data, path_data_building)
-            #     for path_raster_predict in list_path_raster
-            # ]
-            #
-            # # print("\nworking on land cover fraction calculation:")
-            # for path_shp, path_raster in zip(list_path_shp, list_path_raster):
-            #     # print(f"shape file: {path_shp}")
-            #     # print(f"raster file: {path_raster}")
-            #     path_fraction = calculate_fraction(path_shp, path_raster, xn, yn)
-            #     list_path_fraction.append(path_fraction)
-            # n_worker = int(os.cpu_count() / 2 - 1)
-            p = Pool()
+            # p = Pool()
             # merge vector layers
-            list_prm_default = [
-                lat_left_top,
-                lat_right_bot,
-                lon_left_top,
-                lon_right_bot,
-                path_GUF,
-                Road_data,
-                Building_data,
-                path_data_building,
-                debug,
-            ]
-            list_path_shp = p.starmap(
-                predict_shape,
-                zip(list_path_raster, *[repeat(prm) for prm in list_prm_default]),
-            )
-
+            # list_prm_default = [
+            #     lat_left_top,
+            #     lat_right_bot,
+            #     lon_left_top,
+            #     lon_right_bot,
+            #     path_GUF,
+            #     Road_data,
+            #     Building_data,
+            #     path_data_building,
+            #     debug,
+            # ]
+            # list_path_shp = p.starmap(
+            #     predict_shape,
+            #     zip(path_predict_final, *[repeat(prm) for prm in list_prm_default]),
+            # )
+            
+            list_path_shp = predict_shape(path_predict_final,
+                                            lat_left_top,
+                                            lat_right_bot,
+                                            lon_left_top,
+                                            lon_right_bot,
+                                            path_GUF,
+                                            Road_data,
+                                            Building_data,
+                                            path_data_building,debug,
+                                            )
             # calculate land cover fractions
-            list_prm_default = [xn, yn, debug]
-            list_path_fraction += p.starmap(
-                calculate_fraction,
-                zip(
-                    list_path_shp,
-                    list_path_raster,
-                    *[repeat(prm) for prm in list_prm_default],
-                ),
-            )
+            # list_prm_default = [xn, yn, debug]
+            # list_path_fraction += p.starmap(
+            #     calculate_fraction,
+            #     zip(
+            #         list_path_shp,
+            #         path_predict_final,
+            #         *[repeat(prm) for prm in list_prm_default],
+            #     ),
+            # )
+            # list_prm_default = [xn, yn, debug]
+            list_path_fraction = calculate_fraction(
+                                                    list_path_shp,
+                                                    path_predict_final,
+                                                    xn,yn,debug,
+                                                    ),
 
             patch_n = patch_n + 1
 
