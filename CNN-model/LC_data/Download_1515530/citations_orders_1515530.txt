@@ -1,0 +1,14 @@
+The citations in this document should be used to reference the maps and data
+when they have been included in any essays, dissertations or other academic
+works. You should cite the data even if it doesn't appear as an image or map
+in your work if it has been used to generate findings or a new dataset that is
+used.
+
+There is one entry for each product and selected area; you can edit the
+citation if you only use part of the data it covers. Any citations provided
+below are a guide only and should be given in addition to any requirement to
+acknowledge sources and copyright of any data used or any local guidance
+provided:
+
+UKLand [TIFF geospatial data], Scale 1:20000, Tiles: tw,tv,tr,tq,tm,tl,tg,tf,sz,su,sp,sk, Updated: 6 January 2020, Verisk/Geomni, Using: null, <https://digimap.edina.ac.uk>, Downloaded: 2020-05-19 11:40:49.625
+

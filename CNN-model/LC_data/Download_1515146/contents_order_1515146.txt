@@ -1,0 +1,47 @@
+********************************************************************
+
+EDINA DIGIMAP:
+
+DIGITAL DATA SUPPLY
+
+********************************************************************
+
+
+This data is distributed under licence by:
+
+    EDINA
+    University of Edinburgh
+    https://edina.ac.uk
+
+    Tel:    0131 650 3302
+    Fax:    0131 650 3308
+    Email:  digimap@ed.ac.uk
+		
+
+
+---------------------------------------------------------
+
+CONTENTS
+
+You will have received the data files listed below, each product and area has
+its own folder. Note that each data folder contains a conditions.txt file
+which states the conditions for use of the data within. These conditions can
+vary between different data products.
+
+
+
+-------------------------------------------------------------------------------
+Folder:           ukland_coloured_3541662
+Extent:           504446.49688740494, 160030.97620759296 - 561106.3611317428, 192291.36135237385
+Date Ordered:     18 May 2020 at 15:02:46
+Product:          UKLand
+Version:          January 2020
+Format:           TIFF
+Theme:            Coloured
+Area:             1 tiles
+Tiles:
+ 
+Tile Name:        tq
+Extent:           500000.0, 100000.0 - 600000.0, 200000.0
+Last Amended:     6 January 2020
+     
