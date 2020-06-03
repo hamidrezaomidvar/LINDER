@@ -108,6 +108,6 @@ Some technical details:
 
 ![Colombo, Sri Lanka](https://github.com/hamidrezaomidvar/land_cover/raw/master/examples/Colombo.png)
 
-**Pittsburgh, USA**
+**Pittsburgh, United States**
 
 ![Colombo, Sri Lanka](https://github.com/hamidrezaomidvar/land_cover/raw/master/examples/Pittsburgh.png)
