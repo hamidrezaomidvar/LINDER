@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/linder.svg)](https://badge.fury.io/py/linder)
+
 # LINDER: Land use INDexER
 
 A pipeline for calculating land cover over urban/rural areas.
