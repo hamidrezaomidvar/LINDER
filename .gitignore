@@ -132,4 +132,8 @@ dmypy.json
 # sentinel related
 eoexecution-report-*/
 .idea/
-Data/GUF/
+Data/
+CNN-model/LC_data/
+CNN-model-backup/
+London/
+Colombo/

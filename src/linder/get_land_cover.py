@@ -9,15 +9,15 @@ from predict_util import predict_image_one
 from fraction_util import calculate_fraction
 
 # cname = "London"
-cname = "Changsha"
+cname = "Colombo"
 
 # numbers of patches in x/y directions
 nx = 1
 ny = 1
 
 # This is the resolution for fraction calculation for each patch
-xn = 20
-yn = 20
+xn = 30
+yn = 30
 
 with open("./setting.json") as setting_file:
     settings = json.load(setting_file)
