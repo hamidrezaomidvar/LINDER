@@ -62,7 +62,13 @@ download it [here](https://grassbook.org/datasets/datasets-3rd-edition/).
 This pipeline use `GUF` to improve accuracy in predicting urban features.
 
 
-## configuration
+### `OpenStreetMap` data for building and road network
+[OSM](https://www.openstreetmap.org/) data is used automatically through the OSM API.
+
+### `Microsoft Building Footprint` for USA
+Only for the USA, you will be able to use [Mictosoft building footprint dataset](https://github.com/Microsoft/USBuildingFootprints).
+
+## Configuration
 
 ### sentinel-hub
 
@@ -73,7 +79,7 @@ sentinelhub.config --instance_id [your-instance-ID]
 ```
 
 
-## details
+## Details
 This is a pipeline for calculating the landcover over desired regions. It includes:
 
 - Step 1: Getting the location of the region (`lat` and `lon`)
