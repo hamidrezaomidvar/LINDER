@@ -59,11 +59,11 @@ download it [here](https://grassbook.org/datasets/datasets-3rd-edition/).
 ### `GUF` dataset (optional)
 
 [GUF (Global Urban Footprint)](https://www.dlr.de/eoc/en/desktopdefault.aspx/tabid-9628/16557_read-40454/) is a global urban coverage dataset produced by DLR.
-This pipeline use `GUF` to improve accuracy in predicting urban features.
+This pipeline use `GUF` to improve accuracy in predicting urban features (You should be able to run the model without this data set)
 
 
 ### `OpenStreetMap` data for building and road network
-[OSM](https://www.openstreetmap.org/) data is used automatically through the OSM API.
+[OSM](https://www.openstreetmap.org/) data is used automatically through the OSM API (for some cities, OSM is not complete and this limitation can be solved by only using road network and consider the rest of urban category as building). The road network needs a [setting](https://github.com/hamidrezaomidvar/LINDER/blob/master/src/linder/road_width.json) file to specify the road width based on its category (currently based on London roads).
 
 ### `Microsoft Building Footprint` for USA
 Only for the USA, you will be able to use [Mictosoft building footprint dataset](https://github.com/Microsoft/USBuildingFootprints).
