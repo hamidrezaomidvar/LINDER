@@ -2,7 +2,7 @@
 
 # LINDER: Land use INDexER
 
-A pipeline for calculating land cover over urban/rural areas.
+A pipeline for calculating land cover over urban/rural areas using machine learning and other global datasets.
 
 ## How to use?
 
