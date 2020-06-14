@@ -28,6 +28,7 @@ list_path_fraction = ld.get_land_cover(
 df_lc = ld.proc_fraction(list_path_fraction)
 
 ```
+You can see more example in this [directory](https://github.com/hamidrezaomidvar/LINDER/tree/master/misc) (London and Colombo)
 
 ## Required libraries
 
