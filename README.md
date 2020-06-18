@@ -1,4 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/linder.svg)](https://badge.fury.io/py/linder)
+[![Downloads](https://pepy.tech/badge/linder)](https://pepy.tech/project/linder)
 
 # LINDER: Land use INDexER
 
