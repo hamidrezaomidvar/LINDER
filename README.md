@@ -13,16 +13,26 @@ A pipeline for calculating land cover over urban/rural areas using machine learn
 from pathlib import Path
 import linder as ld
 
-# get a list of CSV files of calculated land cover fractions of all downloaded images
+
+lat_left_top_t, lon_left_top_t, = [6.994101, 79.809540] #top left coordinates
+lat_right_bot_t, lon_right_bot_t = [6.806518, 79.951731] #bottom right coordinates
+start, end = "20180101", "20181231" # start and end dates to download images
+path_GUF = Path('Data/GUF/WSF2015_v1_EPSG4326/WSF2015_v1_EPSG4326/') # GUF data path
+
 list_path_fraction = ld.get_land_cover(
-    51.515070,
-    -0.008555,
-    51.489564,
-    0.034932,
-    "2016-01-01",
-    "2017-10-01",
-    path_GUF="Data/GUF/WSF2015_v1_EPSG4326/WSF2015_v1_EPSG4326",
-    path_save=Path("~/Downloads/linder_res").expanduser(),
+    lat_left_top_t,
+    lon_left_top_t,
+    lat_right_bot_t,
+    lon_right_bot_t,
+    start,
+    end,
+    nx=1, # deviding the domain (number of devisions in x) for very large domains
+    ny=1, # deviding the domain (number of devisions in y) for very large domains
+    xn=40, # number of pixels in x direction to calculate fraction in the last step
+    yn=40, # number of pixels in 7 direction to calculate fraction in the last step
+    path_GUF=path_GUF,
+    path_save=Path("./Colombo"), # directory name to save outputs
+    debug=True,
 )
 
 # synthesise the above results to one `DataFrame`
@@ -31,37 +41,52 @@ df_lc = ld.proc_fraction(list_path_fraction)
 ```
 You can see more example in this [directory](https://github.com/hamidrezaomidvar/LINDER/tree/master/misc) (London and Colombo)
 
-## Required libraries
+## Instruction (for developers only, for macOS)
+Please the following steps to prepare required libraries:
 
-### Grass
+1- Clone this package
 
-for macOS, download and install the grass package:
-```
-http://grassmac.wikidot.com/downloads
-```
-
-
-### other python libraries
-
-use `conda` to create a fresh environment for this pipeline:
+2- use `conda` to create a fresh environment for this pipeline:
 ```zsh
 conda env create -f GDAL.yml
 ```
 
 Dependency details refer to [`GDAL.yml`](./GDAL.yml).
 
+3- Change the environment to GDAL environment (from step 2):
+```zsh
+conda activate GDAL
+```
 
-## Dependency datasets
+4- Go to cloned LINDER folder and type:
 
-### `nc_spm_08` dataset
+```zsh
+pip install -e src/
+```
+This will create a link to the src file. So any change in the src file is effective without the need of reinstalling the package.
 
-This dataset includes projection files required by `GRASS`.
-download it [here](https://grassbook.org/datasets/datasets-3rd-edition/).
+5- for macOS, download and install the grass package:
+```
+http://grassmac.wikidot.com/downloads
+```
+For macOS, it should be install somewhere similar to `/Applications/GRASS-7.6.app/Contents/Resources`. This path is needed to be match in [here](https://github.com/hamidrezaomidvar/LINDER/blob/7a2d4c6783bc780903f33181a45491d6c9e508ae/src/linder/grass_util.py#L18) (you can find this file (`grass_util.py`) in the src folder)
 
-### `GUF` dataset (optional)
+6- `nc_spm_08` dataset: this dataset includes projection files required by `GRASS`.
+download it [here](https://grassbook.org/datasets/datasets-3rd-edition/). Then its path needs to be specify in `grass_util.py` in this [line](https://github.com/hamidrezaomidvar/LINDER/blob/7a2d4c6783bc780903f33181a45491d6c9e508ae/src/linder/grass_util.py#L15). In the default case, it is `~/Documents`. If you put it in this folder, no change is needed in this line.
 
-[GUF (Global Urban Footprint)](https://www.dlr.de/eoc/en/desktopdefault.aspx/tabid-9628/16557_read-40454/) is a global urban coverage dataset produced by DLR.
-This pipeline use `GUF` to improve accuracy in predicting urban features (You should be able to run the model without this data set)
+
+7- sentinel-hub: Refer to [this page for setting up a new configuration](https://eo-learn.readthedocs.io/en/latest/examples/land-cover-map/SI_LULC_pipeline.html#Requirements).
+Then update the `sentinelhub` instance ID as follows:
+```
+sentinelhub.config --instance_id [your-instance-ID]
+```
+
+8- `GUF` dataset (optional) [GUF (Global Urban Footprint)](https://www.dlr.de/eoc/en/desktopdefault.aspx/tabid-9628/16557_read-40454/) is a global urban coverage dataset produced by DLR.
+This pipeline use `GUF` to improve accuracy in predicting urban features (You should be able to run the model without this data set, underdevelopment)
+
+9- Use the demo script (top) to run your case by specifying the coordinates.
+
+## Other details
 
 
 ### `OpenStreetMap` data for building and road network
@@ -70,18 +95,7 @@ This pipeline use `GUF` to improve accuracy in predicting urban features (You sh
 ### `Microsoft Building Footprint` for USA
 Only for the USA, you will be able to use [Mictosoft building footprint dataset](https://github.com/Microsoft/USBuildingFootprints).
 
-## Configuration
-
-### sentinel-hub
-
-refer to [this page for setting up a new configuration](https://eo-learn.readthedocs.io/en/latest/examples/land-cover-map/SI_LULC_pipeline.html#Requirements).
-Then update the `sentinelhub` instance ID as follows:
-```
-sentinelhub.config --instance_id [your-instance-ID]
-```
-
-
-## Details
+### methods
 This is a pipeline for calculating the landcover over desired regions. It includes:
 
 - Step 1: Getting the location of the region (`lat` and `lon`)
