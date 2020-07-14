@@ -65,7 +65,7 @@ pip install -e src/
 ```
 This will create a link to the src file. So any change in the src file is effective without the need of reinstalling the package.
 
-5- for macOS, download and install the grass package:
+5- for macOS, download and install the grass package (7.6 for this version of LINDER):
 ```
 http://grassmac.wikidot.com/downloads
 ```
