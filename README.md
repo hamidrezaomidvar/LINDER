@@ -42,7 +42,7 @@ df_lc = ld.proc_fraction(list_path_fraction)
 You can see more example in this [directory](https://github.com/hamidrezaomidvar/LINDER/tree/master/misc) (London and Colombo)
 
 ## Instruction (for developers only, for macOS)
-Please the following steps to prepare required libraries:
+Please use the following steps to prepare required libraries:
 
 1- Clone this package
 
