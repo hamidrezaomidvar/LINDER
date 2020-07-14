@@ -26,8 +26,8 @@ list_path_fraction = ld.get_land_cover(
     lon_right_bot_t,
     start,
     end,
-    nx=1, # deviding the domain (number of devisions in x) for very large domains
-    ny=1, # deviding the domain (number of devisions in y) for very large domains
+    nx=1, # dividing the domain (number of divisions in x) for very large domains
+    ny=1, # dividing the domain (number of divisions in y) for very large domains
     xn=40, # number of pixels in x direction to calculate fraction in the last step
     yn=40, # number of pixels in 7 direction to calculate fraction in the last step
     path_GUF=path_GUF,
